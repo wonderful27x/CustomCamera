@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">@color/white</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+    <color name="white">#FFFFFF</color>
+    <color name="gray">#aaaaaa</color>
+    <color name="blue">#169BD5</color>
+    <color name="progress_blue">#00AAEE</color>
+    <color name="home_blue">#3295FA</color>
+    <color name="transparent_home_blue">#203295FA</color>
+    <color name="black">#000000</color>
+    <color name="graymain">#EEEEEE</color>
+    <color name="graysevere">#F7F7F7</color>
+    <color name="me_black">#ff333333</color>
+    <color name="color_version_number">#ff666666</color>
+
+    <color name="btn_normal">#00ACFF</color>
+    <color name="btn_pressed">#00A1DB</color>
+    <color name="red">#FF0000</color>
+
+    <color name="theme_body">#cc22292c</color>
+    <color name="transparent">#00000000</color>
+
+    <color name="record_btn_wave">#1D85F3</color>
+
+    <color name="record_delete_red">#FA6666</color>
+    <color name="search_color">#4288E8</color>
+
+    <color name="transparent40">#66000000</color>
+
+    <color name="me_background">#F7F7F7</color>
+    <color name="case_details_background">#EEEEEE</color>
+    <color name="login_out_text">#FA6666</color>
+    <color name="tabTextColor">#000000</color>
+    <color name="tabTextCaseDetailColor">#C3C3C3</color>
+    <color name="tabSelectedTextColor">#0084FF</color>
+
+    <color name="tabIndicatorColor">#589EFF</color>
+    <color name="case_title">#6C6C6C</color>
+    <color name="case_goods_text_left">#8A8A8A</color>
+    <color name="case_goods_text_right">#BEBEBE</color>
+    <color name="case_goods_text_right_complect">#46AE5D</color>
+
+
+    <color name="pickerview_bg_topbar">#f5f5f5</color>
+    <color name="pickerview_timebtn_pre">#c2daf5</color>
+    <color name="pickerview_timebtn_nor">#057dff</color>
+    <color name="pickerview_bgColor_overlay">#60000000</color>
+    <color name="wait_type_tag">#FA6666</color>
+    <color name="background_tab_pressed">#6633B5E5</color>
+    <color name="none_color">#00000000</color>
+    <color name="item_main_text_color">#737373</color>
+    <color name="act_background">#efefef</color>
+    <color name="phone_bg">#f6f6f6</color>
+    <color name="gary">#898989</color>
+    <!--底部tab -->
+    <color name="item_tab_bg">#e91e63</color>
+    <color name="tab_bg_green">#3296fa</color>
+    <!--底部tab -->
+    <!-- 登录按钮变色-->
+    <color name="btn_bg">#3296fa</color> <!-- 按钮背景色 -->
+    <color name="btn_bg_on">#3296fa</color> <!-- 按钮背景色(按住) -->
+    <color name="btn_bg_off">#b6b6b6</color>
+    <color name="edit_unclickable_color">#cccccc</color>
+    <!-- 共同的一些颜色-ljz -->
+    <!-- 登录按钮变色-->
+    <color name="btn_bg_query">#589EFF</color> <!-- 按钮背景色 -->
+    <color name="btn_bg_on_query">#1B82D1</color> <!-- 按钮背景色(按住) -->
+    <color name="btn_bg_off_query">#b6b6b6</color>
+    <color name="edit_unclickable_color_query">#cccccc</color>
+    <!-- 共同的一些颜色-ljz -->
+
+
+    <!--<color name="login_backgroud_color">#E7EFD8</color>-->
+    <color name="common_black">#333333</color>
+    <color name="common_title_backgroud_color">#589EFF</color>
+    <color name="common_title_login_color">#1296db</color>
+    <color name="common_actionbar_all_line">#dfdfdf</color>
+    <color name="common_title_color">#666666</color>
+    <!--<color name="common_backgroud_color">#EFEFEF</color>-->
+
+    <!--<color name="login_button_textcolor">#ffffff</color>&lt;!&ndash; 白色 &ndash;&gt;-->
+    <!--<color name="login_register_and_unableLogin_button_textcolor">#3FB0FF</color>&lt;!&ndash; 蓝色 &ndash;&gt;-->
+    <!--<color name="login_cooperative_account_textcolor">#434343</color> &lt;!&ndash; 灰色 &ndash;&gt;-->
+    <!--<color name="common_default_background">#F2F2F2</color>&lt;!&ndash;  &ndash;&gt;-->
+    <color name="comm_button_blue">#3296fa</color>
+    <color name="comm_title_blue">#589EFF</color>
+    <!--<color name="common_action_sheet_button_blue">#ff0079ff</color>-->
+    <color name="common_titlebar_background_header">#1B82D1</color>
+    <!--<color name="login_backgroud_tex_select">#439BF0</color>-->
+    <color name="common_titlebar_background">#eee</color>
+    <color name="common_titlebar_titletext_color">#000000</color>
+    <color name="common_white">#ffffff</color><!-- 白色 -->
+    <color name="common_blue">#0084FF</color>
+    <color name="common_button_blue">#058EE5</color>
+    <color name="common_backgroud_color">#F0EFF4</color><!--  -->
+    <!--<color name="common_color_bottom_text_normal">#9da0a4</color>-->
+    <!--<color name="common_search_bar_textcolor">#aaaaaa</color>&lt;!&ndash; 搜索栏中的字体颜色 &ndash;&gt;-->
+    <!--<color name="common_popupwindow_bar_color">#232325</color>-->
+    <!--<color name="common_expandview_divider_line">#dddddd</color>-->
+    <!--<color name="common_selector_color">#cccccc</color>-->
+    <!--<color name="common_result_view">#2B2B2B</color>-->
+    <!--<color name="common_viewfinder_mask">#60000000</color>-->
+    <!--<color name="common_possible_result_points">#c0ffff00</color>-->
+    <color name="common_title_background">#40affc</color>
+    <color name="common_tab_background">#589EFF</color>
+    <color name="common_expandview_divider_line">#dddddd</color>
+    <color name="common_dialog_expandview_divider_line">#F5F5F5</color> <!-- 日期框架弹出框间隔线的颜色 -->
+    <!--<color name="common_expandview_group_divider_color">#F2F2F2</color> &lt;!&ndash; 组与组之间的背景色 &ndash;&gt;-->
+    <!--<color name="common_expandview_admin_bg">#F6BF26</color>-->
+
+    <color name="font_white_one">#FFFFFF</color>
+    <color name="comm_hin_color">#AEAFB2</color>
+    <color name="gray_normal">#666667</color>
+    <color name="common_divider_color">#EEEEEE</color>
+    <color name="common_detail_title_color">#9FA3A5</color>
+
+    <color name="diolog_title_color">#ABB0B2</color>
+    <color name="diolog_positive_color">#3B9AF8</color>
+    <!--<color name="blue">#0383EE</color>-->
+    <!-- 共同的一些颜色-ljz -->
+    <color name="patrol_calender_color">#DDE9F4</color>
+    <color name="patrol_patrol_case_color">#00A2E8</color>
+
+    <!--FCDDDD-->
+    <!--DDE9F4-->
+    <!--11B8F6-->
+    <!-- 自定义header背景色 -->
+    <color name="bg_head">#FF0F4AAA</color>
+    <!-- 灰色背景 -->
+    <color name="bg_grey">#FFE5E5E5</color>
+    <!-- 白色背景 -->
+    <color name="bg_white">#FFFFFFFF</color>
+    <!-- 分格线背景色 -->
+    <color name="bg_divider_line">#FFD4D4D4</color>
+
+    <color name="butten_green">#1AAC19</color>
+    <color name="check_butten_green">#19ad19</color>
+    <color name="title1">#4a4a4a</color>
+    <color name="title2">#a2a2a2</color>
+    <color name="line">#d1d1d1</color>
+    <color name="text1">#61AFFB</color>
+    <color name="text2">#333333</color>
+    <color name="text3">#B1B4B5</color>
+    <color name="split_line">#11112233</color>
+    <color name="tab_bag_color">#7E7E7F</color>
+    <color name="blue_dark">#008EFF</color>
+    <color name="backgroud_home">#F7F7F7</color>
+    <color name="colorExCircle">#5e1ec1b5</color>
+    <color name="colorInCircle">#1EC1B5</color>
+    <color name="colorNormal">#454646</color>
+    <color name="colorSelect">#ffffff</color>
+    <color name="content_background">#f2f2f2</color>
+    <color name="solar_background">#009988</color>
+
+
+    <color name="line_color">#e7e7e7</color>
+    <color name="default_background_label">#ff303030</color>
+    <color name="yellow">#FFFF00</color> <!--黄色 -->
+
+    <color name="goods_item_text_normal">@color/black</color>
+    <color name="goods_item_text_selected">@color/white</color>
+    <color name="goods_item_btn_bg_normal">#ffffff</color>
+    <color name="goods_item_btn_bg_selected">#ff8000</color>
+    <color name="goods_item_btn_bg_border">@color/goods_item_btn_bg_selected</color>
+
+    <color name="royalblue">#4169E1</color>
+    <color name="slategray">#708090</color>
+    <color name="orangered">#FF4500</color>
+
+    <color name="light_gray">#F3F3F3</color>
+    <color name="text_color_999999">#999999</color>
+    <color name="color_f3f3f3">#f3f3f3</color>
+
+    <color name="light_blue">#E0FFFF</color>
+
+</resources>

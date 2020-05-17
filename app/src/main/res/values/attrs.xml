@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="wonderfulTabStyle">
+        <attr name="bottomTitleSize" format="dimension"/>
+        <attr name="bottomTitleColor" format="color"/>
+        <attr name="bottomTitle" format="string"/>
+
+        <attr name="topTitleSize" format="dimension"/>
+        <attr name="topTitleColor" format="color"/>
+        <attr name="topTitle" format="string"/>
+
+        <attr name="bottomDrawable" format="reference"/>
+        <attr name="topDrawable" format="reference"/>
+
+        <attr name="isChecked" format="boolean"/>
+
+        <attr name="responseMode" format="integer"/>
+    </declare-styleable>
+
+    <declare-styleable name="wonderfulSnakeStyle">
+        <attr name="enableLeftButton" format="boolean"/>
+        <attr name="enableRightButton" format="boolean"/>
+        <attr name="gapHorizontal" format="dimension"/>
+
+        <attr name="leftButtonPaddingLeft" format="dimension"/>
+        <attr name="leftButtonPaddingRight" format="dimension"/>
+        <attr name="leftButtonPaddingTop" format="dimension"/>
+        <attr name="leftButtonPaddingBottom" format="dimension"/>
+        <attr name="leftButtonPadding" format="dimension"/>
+
+        <attr name="rightButtonPaddingLeft" format="dimension"/>
+        <attr name="rightButtonPaddingRight" format="dimension"/>
+        <attr name="rightButtonPaddingTop" format="dimension"/>
+        <attr name="rightButtonPaddingBottom" format="dimension"/>
+        <attr name="rightButtonPadding" format="dimension"/>
+
+        <attr name="midPaddingLeft" format="dimension"/>
+        <attr name="midPaddingRight" format="dimension"/>
+        <attr name="midPaddingTop" format="dimension"/>
+        <attr name="midPaddingBottom" format="dimension"/>
+        <attr name="midPadding" format="dimension"/>
+
+        <attr name="responseModeEdge" format="integer"/>
+        <attr name="responseModeMid" format="integer"/>
+
+        <attr name="midItemWidth" format="dimension"/>
+    </declare-styleable>
+
+</resources>

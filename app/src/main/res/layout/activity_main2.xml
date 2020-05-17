@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+
+    android:gravity="center"
+    tools:context=".Main2Activity">
+
+    <com.example.cameratest.CustomSnakeBar
+        android:id="@+id/snake"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/yellow"
+        app:leftButtonPaddingLeft="10dp"
+        app:leftButtonPaddingRight="10dp"
+        app:rightButtonPaddingLeft="10dp"
+        app:rightButtonPaddingRight="10dp"
+        app:gapHorizontal="10dp"
+        app:midItemWidth="40dp"/>
+</LinearLayout>
