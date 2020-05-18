@@ -1,4 +1,4 @@
-package com.example.wyrtmplive;
+package com.example.cameratest;
 
 import android.app.Activity;
 import android.graphics.ImageFormat;
@@ -12,22 +12,30 @@ import java.util.List;
 
 /**
  * 相机帮助类，主要用于摄像头数据的获取和预览
+ * 相机有Camera和Camera2两套api，我们这里使用老版本的Camera
+ * 关于相机的使用还是有些复杂的，其中涉及到很多基础概念，下面是推荐的几篇博客
+ * https://www.jianshu.com/p/f8d0d1467584
+ * https://www.jianshu.com/p/e20a2ad6ad9a
  */
 public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callback {
 
     private static final String TAG = "CameraHelper";
+    //这是surfaceView提供的Holder
     private SurfaceHolder holder;
     private Activity activity;
     private Camera camera;
     private int cameraId;
     private int width;
     private int height;
+    private int picWidth;
+    private int picHeight;
     private byte[] cameraBuff;
     private byte[] cameraBuffRotate;
     private int rotation;
 
     private SizeChangedListener sizeChangedListener;
-    private PreviewCallback previewCallback;
+    //相机预览回掉，提供给外界使用
+    private Camera.PreviewCallback previewCallback;
 
 
     public CameraHelper(Activity activity, int cameraId, int width, int height) {
@@ -69,8 +77,12 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
             parameters.setPreviewFormat(ImageFormat.NV21);
             //设置摄像头预览尺寸
             setPreviewSize(parameters);
+            //设置拍照后保存的图片的尺寸
+            setPictureSize(parameters);
             //设置摄像头 图像传感器的角度、方向
             setPreviewOrientation(parameters);
+            //设置对焦模式:持续对焦
+            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
             camera.setParameters(parameters);
             //数据缓存区,使用yuv数据格式计算大小
             cameraBuff = new byte[width * height * 3 / 2];
@@ -129,6 +141,24 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
         Log.d(TAG, "预览分辨率 width:" + width + " height:" + height);
     }
 
+    /**
+     * 设置拍照保存的图片尺寸
+     * 默认获取第一个
+     * @param parameters
+     */
+    private void setPictureSize(Camera.Parameters parameters){
+        List<Camera.Size> sizeList = parameters.getSupportedPictureSizes();
+        if (sizeList != null && sizeList.size() >0){
+            picWidth = sizeList.get(0).width;
+            picHeight = sizeList.get(0).height;
+        }
+    }
+
+    /**
+     * 设置预览旋转角度，由于传感器的方向是固定的，与屏幕的坐标又不吻合，需要做一些角度的旋转
+     * 使得图像显示正常
+     * @param parameters
+     */
     private void setPreviewOrientation(Camera.Parameters parameters) {
         Camera.CameraInfo info = new Camera.CameraInfo();
         Camera.getCameraInfo(cameraId, info);
@@ -165,39 +195,36 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
                 break;
         }
         int result;
+        //算法基本固定
+        //如果是前摄
         if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
             result = (info.orientation + degrees) % 360;
             result = (360 - result) % 360; // compensate the mirror
-        } else { // back-facing
+        }
+        //如果是后摄
+        else { // back-facing
             result = (info.orientation - degrees + 360) % 360;
         }
-        //设置角度, 参考源码注释
+        //设置预览旋转角
         camera.setDisplayOrientation(result);
     }
 
+    /**
+     * Camera.PreviewCallback，相机预览回掉，
+     * 当获取到预览数据时会回掉此方法，byte[] bytes是原始数据
+     * 由于CameraHelper是相机封装类，当获取到预览数据是我们将其回掉出去，给外界使用
+     * @param bytes
+     * @param camera
+     */
     @Override
     public void onPreviewFrame(byte[] bytes, Camera camera) {
-//        Log.d(TAG,"onPreviewFrame");
-        switch (rotation) {
-            case Surface.ROTATION_0:
-                rotate90(bytes);
-                if (previewCallback != null) {
-                    previewCallback.onPreviewFrame(cameraBuffRotate);
-                }
-                camera.addCallbackBuffer(cameraBuff);//这句代码很重要，去掉后回调回中断
-                return;
-            case Surface.ROTATION_90:
-                break;
-            case Surface.ROTATION_270:
-                break;
-            default:
-                break;
-        }
         if (previewCallback != null) {
-            previewCallback.onPreviewFrame(bytes);
+            previewCallback.onPreviewFrame(bytes,camera);
         }
-        camera.addCallbackBuffer(cameraBuff);//这句代码很重要，去掉后回调回中断
+        //这句代码很重要，去掉后回调回中断
+        camera.addCallbackBuffer(cameraBuff);
     }
+
 
     private void rotate90(byte[] data) {
         int index = 0;
@@ -255,19 +282,20 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
         }
     }
 
+
+    //////////////////////////////////////////SurfaceHolder.Callback////////////////////////////////
+    //我们这里使用SurfaceView来进行预览，SurfaceHolder.Callback用于监听Surface的变化，我们实现这个接口以便做相应处理
+    //实现的接口需要设置给SurfaceHolder，这个SurfaceHolder就是SurfaceView所提供的
     /**
      * surface创建时回调
-     *
      * @param surfaceHolder
      */
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
-
     }
 
     /**
      * surface改变时回调，如横竖屏切换
-     *
      * @param surfaceHolder
      * @param i
      * @param i1
@@ -275,35 +303,22 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
      */
     @Override
     public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
-        stopPreview();
-        startPreview();
+        stopPreview(); //先停止预览
+        startPreview();//再重新开始预览
     }
 
     /**
      * surface销毁是回调
-     *
      * @param surfaceHolder
      */
     @Override
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
+        //做释放资源处理
         stopPreview();
     }
 
-
     /**
-     * 数据预览回调，当获取到摄像头数据时回调出去，再通过底层把数据封装推流
-     */
-    public interface PreviewCallback {
-        public void onPreviewFrame(byte[] bytes);
-    }
-
-    public void setPreviewCallback(PreviewCallback previewCallback) {
-        this.previewCallback = previewCallback;
-    }
-
-    /**
-     * surface大小发生改变回调接口，
-     * 当其大小发生改变时数据的编码参数会发生改变，所以需要回调最后通知底层
+     * surface大小发生改变时会重新计算预览宽高，将这个信息回掉出去
      */
     public interface SizeChangedListener {
         public void onChanged(int width, int height);

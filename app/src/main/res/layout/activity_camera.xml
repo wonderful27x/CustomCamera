@@ -1,9 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:gravity="center"
     tools:context=".CameraActivity">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <SurfaceView
+        android:id="@+id/surfaceView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+    <ImageView
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:layout_centerInParent="true"
+        android:background="@drawable/load_image2"/>
+
+    <com.example.cameratest.CustomSnakeBar
+        android:id="@+id/snake"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        app:leftButtonPaddingLeft="10dp"
+        app:leftButtonPaddingRight="10dp"
+        app:rightButtonPaddingLeft="10dp"
+        app:rightButtonPaddingRight="10dp"
+        app:gapHorizontal="10dp"/>
+
+</RelativeLayout>
