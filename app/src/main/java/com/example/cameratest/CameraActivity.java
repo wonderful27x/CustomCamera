@@ -12,6 +12,7 @@ import android.hardware.Camera;
 import android.os.Bundle;
 import android.view.SurfaceView;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,12 +21,19 @@ public class CameraActivity extends AppCompatActivity {
 
     private CameraHelper cameraHelper;
     private SurfaceView surfaceView;
+    private TabView takePic;
+    private ImageView rect;
+    private CustomSnakeBar<TabView> snakeBar;
+    private int choosePosition = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
         surfaceView = findViewById(R.id.surfaceView);
+        takePic = findViewById(R.id.takePic);
+        rect = findViewById(R.id.rect);
+
         initSnake();
 
         //初始化相机
@@ -33,6 +41,13 @@ public class CameraActivity extends AppCompatActivity {
         int width = 600;
         int height = 600;
         cameraHelper = new CameraHelper(this,cameraId,width,height);
+
+        takePic.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                cameraHelper.takePicture();
+            }
+        });
 
         //检查权限
         List<String> permissionList = permissionCheck();
@@ -48,7 +63,7 @@ public class CameraActivity extends AppCompatActivity {
 
     //中间按钮使用TabView，左右按钮使用默认
     private void initSnake(){
-        CustomSnakeBar<TabView> snakeBar = findViewById(R.id.snake);
+        snakeBar = findViewById(R.id.snake);
 
         List<TabView> views = new ArrayList<>();
 
@@ -73,8 +88,8 @@ public class CameraActivity extends AppCompatActivity {
 
         snakeBar.addChildren(views);
 
-        snakeBar.enableLeftButton(null);
-        snakeBar.enableRightButton(null);
+//        snakeBar.enableLeftButton(null);
+//        snakeBar.enableRightButton(null);
 
         snakeBar.init();
 
@@ -82,6 +97,14 @@ public class CameraActivity extends AppCompatActivity {
             @Override
             public void onItemClick(View view, int position) {
                 Toast.makeText(CameraActivity.this,"click: " + position,Toast.LENGTH_SHORT).show();
+                choosePosition = position;
+                if (choosePosition == 1){
+                    rect.setVisibility(View.GONE);
+                    takePic.setVisibility(View.VISIBLE);
+                }else {
+                    rect.setVisibility(View.VISIBLE);
+                    takePic.setVisibility(View.GONE);
+                }
             }
         });
 
@@ -98,6 +121,8 @@ public class CameraActivity extends AppCompatActivity {
                 Toast.makeText(CameraActivity.this,"click: right",Toast.LENGTH_SHORT).show();
             }
         });
+
+        snakeBar.setChoosePosition(0);
     }
 
     private Drawable getDrawableFromSource(int sourceId){

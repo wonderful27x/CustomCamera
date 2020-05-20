@@ -1,7 +1,11 @@
 package com.example.cameratest;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
+import android.graphics.Matrix;
 import android.hardware.Camera;
 import android.util.Log;
 import android.view.Surface;
@@ -20,8 +24,8 @@ import java.util.List;
 public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callback {
 
     private static final String TAG = "CameraHelper";
-    //这是surfaceView提供的Holder
-    private SurfaceHolder holder;
+
+    private SurfaceHolder holder;//这是surfaceView提供的Holder
     private Activity activity;
     private Camera camera;
     private int cameraId;
@@ -32,6 +36,7 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
     private byte[] cameraBuff;
     private byte[] cameraBuffRotate;
     private int rotation;
+    private Bitmap picBitmap;//拍照转换的bitmap
 
     private SizeChangedListener sizeChangedListener;
     //相机预览回掉，提供给外界使用
@@ -226,6 +231,38 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
     }
 
 
+    /**
+     * 拍照
+     */
+    public void takePicture(){
+        //TODO 这个api的参数不太明白，待理解
+        camera.takePicture(null, null,new Camera.PictureCallback() {
+            @Override
+            public void onPictureTaken(byte[] data, Camera camera) {
+                byteToBitmap(data);
+                PictureActivity.bitmap = picBitmap;
+                Intent intent = new Intent(activity,PictureActivity.class);
+                activity.startActivity(intent);
+            }
+        });
+    }
+
+    /**
+     * 将byte类型的原始数据转换成bitmap
+     */
+    private void byteToBitmap(byte[] data){
+        picBitmap = BitmapFactory.decodeByteArray(data,0,data.length);
+        //前摄旋转270度
+        if (cameraId == Camera.CameraInfo.CAMERA_FACING_FRONT){
+            picBitmap = rotate(picBitmap,270.0f);
+        }
+        //后摄旋转90度
+        else {
+            picBitmap = rotate(picBitmap,90.0f);
+        }
+    }
+
+
     private void rotate90(byte[] data) {
         int index = 0;
         int ySize = width * height;
@@ -281,6 +318,20 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
             }
         }
     }
+
+    //水平镜像翻转
+    private Bitmap mirror(Bitmap bitmap){
+        Matrix matrix = new Matrix();
+        matrix.postScale(-1f, 1f);
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+    }
+    //旋转
+    private Bitmap rotate(Bitmap bitmap, Float degree){
+        Matrix matrix = new Matrix();
+        matrix.postRotate(degree);
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+    }
+
 
 
     //////////////////////////////////////////SurfaceHolder.Callback////////////////////////////////

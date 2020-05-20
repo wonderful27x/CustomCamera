@@ -12,7 +12,39 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
+    <com.example.cameratest.TabView
+        android:id="@+id/back"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:layout_centerHorizontal="true"
+        android:layout_margin="10dp"
+        android:clickable="true"
+        app:bottomTitleColor = "@color/gray"
+        app:topTitleColor = "@color/blue"
+        app:bottomDrawable="@drawable/album"
+        app:topDrawable="@drawable/album"
+        app:responseMode="1"
+        android:visibility="visible"/>
+
+    <com.example.cameratest.TabView
+        android:id="@+id/album"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_margin="10dp"
+        android:clickable="true"
+        app:bottomTitleColor = "@color/gray"
+        app:topTitleColor = "@color/blue"
+        app:bottomDrawable="@drawable/bar_black_back"
+        app:topDrawable="@drawable/bar_black_back"
+        app:responseMode="1"
+        android:visibility="visible"/>
+
     <ImageView
+        android:id="@+id/rect"
         android:layout_width="300dp"
         android:layout_height="300dp"
         android:layout_centerInParent="true"
@@ -22,11 +54,32 @@
         android:id="@+id/snake"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
+        android:layout_alignParentBottom="true"
         app:leftButtonPaddingLeft="10dp"
         app:leftButtonPaddingRight="10dp"
         app:rightButtonPaddingLeft="10dp"
         app:rightButtonPaddingRight="10dp"
         app:gapHorizontal="10dp"/>
+
+
+        <com.example.cameratest.TabView
+            android:id="@+id/takePic"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@id/snake"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="10dp"
+            android:background="@color/yellow"
+            android:clickable="true"
+            app:bottomTitle ="点击拍照"
+            app:topTitle ="点击拍照"
+            app:bottomTitleSize = "4sp"
+            app:topTitleSize = "4sp"
+            app:bottomTitleColor = "@color/gray"
+            app:topTitleColor = "@color/blue"
+            app:bottomDrawable="@drawable/icon_toggle_white_circle"
+            app:topDrawable="@drawable/icon_toggle_white_circle"
+            app:responseMode="1"
+            android:visibility="gone"/>
 
 </RelativeLayout>

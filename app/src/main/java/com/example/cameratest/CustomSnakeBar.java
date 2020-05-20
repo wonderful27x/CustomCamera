@@ -70,6 +70,8 @@ public class CustomSnakeBar<T> extends LinearLayout {
      */
     private int responseModeMid;
 
+    private CustomButtonLayout customButtonLayout;//中间按钮布局
+
     public CustomSnakeBar(Context context) {
         this(context,null);
     }
@@ -218,7 +220,7 @@ public class CustomSnakeBar<T> extends LinearLayout {
             view.setPadding(leftButtonPaddingLeft,leftButtonPaddingTop,leftButtonPaddingRight,leftButtonPaddingBottom);
         }
 
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        LayoutParams layoutParams = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         view.setLayoutParams(layoutParams);
 
         view.setOnClickListener(new OnClickListener() {
@@ -264,7 +266,7 @@ public class CustomSnakeBar<T> extends LinearLayout {
             view.setPadding(rightButtonPaddingLeft,rightButtonPaddingTop,rightButtonPaddingRight,rightButtonPaddingBottom);
         }
 
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        LayoutParams layoutParams = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         view.setLayoutParams(layoutParams);
 
         view.setOnClickListener(new OnClickListener() {
@@ -281,8 +283,8 @@ public class CustomSnakeBar<T> extends LinearLayout {
 
     //构建中间按钮
     private CustomButtonLayout createCustomButtonLayout(){
-        final CustomButtonLayout customButtonLayout = new CustomButtonLayout(context);
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT);
+        customButtonLayout = new CustomButtonLayout(context);
+        LayoutParams layoutParams = new LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT);
         layoutParams.weight = 1;
         customButtonLayout.setLayoutParams(layoutParams);
         customButtonLayout.setGapHorizontal(gapHorizontal);
@@ -298,7 +300,7 @@ public class CustomSnakeBar<T> extends LinearLayout {
             //如果是String类型，则构建默认TabView
             if (object instanceof String){
                 TabView tabView = new TabView(context);
-                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(midItemWidth,  ViewGroup.LayoutParams.WRAP_CONTENT);
+                LayoutParams params = new LayoutParams(midItemWidth,  ViewGroup.LayoutParams.WRAP_CONTENT);
                 tabView.setLayoutParams(params);
                 //设置模式-选择模式
                 tabView.setResponseMode(responseModeMid);
@@ -579,6 +581,31 @@ public class CustomSnakeBar<T> extends LinearLayout {
         }
     }
 
+    public int getChoosePosition() {
+        return choosePosition;
+    }
+
+    /**
+     * 设置选中的Item，如果不是选择模式不会有任何效果，只会改变choosePosition字段的数值
+     * @param position 中的位置
+     */
+    public void setChoosePosition(int position) {
+        //如果是选择模式
+        if (responseModeMid == 0){
+            TabView view;
+            //先清除上次选中的
+            if (choosePosition != -1){
+                view = (TabView) customButtonLayout.getChildAt(choosePosition);
+                view.setChecked(false);
+            }
+            //设置当前选中的
+            view = (TabView) customButtonLayout.getChildAt(position);
+            view.setChecked(true);
+        }
+
+        this.choosePosition = position;
+    }
+
     public int getMidItemWidth() {
         return midItemWidth;
     }
@@ -588,7 +615,7 @@ public class CustomSnakeBar<T> extends LinearLayout {
     }
 
     public interface OnItemClickListener{
-        public void onItemClick(View view,int position);
+        public void onItemClick(View view, int position);
     }
 
     public interface LeftClickListener{

@@ -17,8 +17,6 @@ import android.widget.Toast;
  */
 public class MainActivity extends AppCompatActivity {
 
-    //TODO Git test
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
