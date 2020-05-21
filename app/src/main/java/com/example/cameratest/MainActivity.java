@@ -23,7 +23,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Intent intent = new Intent(MainActivity.this,Main2Activity.class);
         Intent intentCamera = new Intent(MainActivity.this,CameraActivity.class);
-        startActivity(intentCamera);
+        Intent intentCameraWonderful = new Intent(MainActivity.this,WonderfulCameraActivity.class);
+        startActivity(intentCameraWonderful);
 //        final TabView view = findViewById(R.id.text);
 //        view.setOnClickListener(new View.OnClickListener() {
 //            @Override

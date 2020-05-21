@@ -37,10 +37,7 @@ public class CameraActivity extends AppCompatActivity {
         initSnake();
 
         //初始化相机
-        int cameraId = Camera.CameraInfo.CAMERA_FACING_BACK;
-        int width = 600;
-        int height = 600;
-        cameraHelper = new CameraHelper(this,cameraId,width,height);
+        cameraHelper = new CameraHelper(this);
 
         takePic.setOnClickListener(new View.OnClickListener() {
             @Override

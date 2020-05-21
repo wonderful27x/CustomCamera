@@ -18,6 +18,8 @@ import java.util.List;
  *  @Date 2020-5-14
  *  @Version 1.0
  *  @Description 自定义SnakeBar，类似导航栏的功能,结合TabView可实现强大的功能
+ *
+ *  TODO 控件还有一个bug，当子控件的宽高不一致的时候没有考虑解决策略
  */
 public class CustomSnakeBar<T> extends LinearLayout {
 
@@ -449,7 +451,7 @@ public class CustomSnakeBar<T> extends LinearLayout {
             top = getPaddingTop();
             //计算最左边控件的位置
             int leftNum = childCount / 2;
-            int childWidth = getChildAt(0).getMeasuredWidth();
+            int childWidth = getMaxWidth();
 
             //偶数
             if (childCount % 2 ==0){
@@ -480,7 +482,7 @@ public class CustomSnakeBar<T> extends LinearLayout {
             //获取布局的宽
             int parentWidth = getMeasuredWidth() - getPaddingLeft() - getPaddingRight();
             //获取所有子控件的总宽
-            int childrenWidth = getChildAt(0).getMeasuredWidth() * childrenCount;
+            int childrenWidth = getMaxWidth() * childrenCount;
 
             View child;
             int left;
@@ -546,13 +548,38 @@ public class CustomSnakeBar<T> extends LinearLayout {
 
         }
 
+        //获取最大子控件宽
+        private int getMaxWidth(){
+            int width = 0;
+            for (int i=0; i<getChildCount(); i++){
+                int measuredWidth = getChildAt(i).getMeasuredWidth();
+                if (measuredWidth > width){
+                    width = measuredWidth;
+                }
+            }
+            return width;
+        }
+
+        //获取最大子控件高
+        private int getMaxHeight(){
+            int height = 0;
+            for (int i=0; i<getChildCount(); i++){
+                int measuredHeight = getChildAt(i).getMeasuredHeight();
+                if (measuredHeight > height){
+                    height = measuredHeight;
+                }
+            }
+            return height;
+        }
+
         //获取能容纳（可显示）的最大子控件数量
         private int getMaxNum(){
+            int maxChildWidth = getMaxWidth();
             int width = 0;
             int maxNum = 0;
             for (int i=0; i<getChildCount(); i++){
                 maxNum ++;
-                width += getChildAt(i).getMeasuredWidth();
+                width += maxChildWidth;
                 if (width > getMeasuredWidth() - getPaddingLeft() - getPaddingRight()){
                     return maxNum - 1;
                 }
@@ -606,12 +633,36 @@ public class CustomSnakeBar<T> extends LinearLayout {
         this.choosePosition = position;
     }
 
+    public void setMidPaddingLeft(int midPaddingLeft) {
+        this.midPaddingLeft = midPaddingLeft;
+    }
+
+    public void setMidPaddingRight(int midPaddingRight) {
+        this.midPaddingRight = midPaddingRight;
+    }
+
+    public void setMidPaddingTop(int midPaddingTop) {
+        this.midPaddingTop = midPaddingTop;
+    }
+
+    public void setMidPaddingBottom(int midPaddingBottom) {
+        this.midPaddingBottom = midPaddingBottom;
+    }
+
     public int getMidItemWidth() {
         return midItemWidth;
     }
 
     public void setMidItemWidth(int midItemWidth) {
         this.midItemWidth = midItemWidth;
+    }
+
+    public int getGapHorizontal() {
+        return gapHorizontal;
+    }
+
+    public void setGapHorizontal(int gapHorizontal) {
+        this.gapHorizontal = gapHorizontal;
     }
 
     public interface OnItemClickListener{

@@ -8,6 +8,7 @@ import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.hardware.Camera;
 import android.util.Log;
+import android.util.Size;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import java.io.IOException;
@@ -29,10 +30,11 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
     private Activity activity;
     private Camera camera;
     private int cameraId;
-    private int width;
-    private int height;
+    private int previewWidth;
+    private int previewHeight;
     private int picWidth;
     private int picHeight;
+    private String focusMode;
     private byte[] cameraBuff;
     private byte[] cameraBuffRotate;
     private int rotation;
@@ -42,12 +44,14 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
     //相机预览回掉，提供给外界使用
     private Camera.PreviewCallback previewCallback;
 
-
-    public CameraHelper(Activity activity, int cameraId, int width, int height) {
+    public CameraHelper(Activity activity) {
         this.activity = activity;
-        this.cameraId = cameraId;
-        this.width = width;
-        this.height = height;
+        this.cameraId = Camera.CameraInfo.CAMERA_FACING_BACK;             //默认启用后摄
+        this.focusMode = Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE; //默认持续对焦
+        this.previewWidth = -1;
+        this.previewHeight = -1;
+        this.picWidth = -1;
+        this.picHeight = -1;
     }
 
     public void setHolder(SurfaceHolder holder) {
@@ -87,11 +91,11 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
             //设置摄像头 图像传感器的角度、方向
             setPreviewOrientation(parameters);
             //设置对焦模式:持续对焦
-            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+            parameters.setFocusMode(focusMode);
             camera.setParameters(parameters);
             //数据缓存区,使用yuv数据格式计算大小
-            cameraBuff = new byte[width * height * 3 / 2];
-            cameraBuffRotate = new byte[width * height * 3 / 2];
+            cameraBuff = new byte[previewWidth * previewHeight * 3 / 2];
+            cameraBuffRotate = new byte[previewWidth * previewHeight * 3 / 2];
             camera.addCallbackBuffer(cameraBuff);
             camera.setPreviewCallbackWithBuffer(this);
             //设置渲染点surfaceHolder
@@ -115,48 +119,75 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
         }
     }
 
+
     /**
-     * 设置摄像头尺寸，因为自己设置的width和height摄像头不一定支持，
-     * 需要做一些计算获取最接近的值
-     *
-     * @param parameters
+     * 获取一个最接近的尺寸，因为用户设置的尺寸相机不一定都支持，所以通过计算得到一个最接近的尺寸
+     * @param expectWidth 期望的宽
+     * @param expectHeight 期望的高
+     * @param supportSize 相机支持的尺寸
+     * @return 返回得到的最接近的尺寸
      */
-    private void setPreviewSize(Camera.Parameters parameters) {
-        //获取摄像头支持的宽、高
-        List<Camera.Size> supportedPreviewSizes = parameters.getSupportedPreviewSizes();
-        Camera.Size size = supportedPreviewSizes.get(0);
+    private Size getBestSize(int expectWidth, int expectHeight, List<Camera.Size> supportSize) {
+        if (supportSize == null || supportSize.size() <=0){
+            return null;
+        }
+
+        Camera.Size size = supportSize.get(0);
         Log.d(TAG, "Camera支持: " + size.width + "x" + size.height);
+
+        //如果期望的宽高为-1则默认使用支持的第一个size
+        if (expectWidth == -1 && expectHeight == -1){
+            return new Size(size.width,size.height);
+        }
+
         //选择一个与设置的差距最小的支持分辨率
-        int m = Math.abs(size.width * size.height - width * height);
-        supportedPreviewSizes.remove(0);
-        Iterator<Camera.Size> iterator = supportedPreviewSizes.iterator();
+        int m = Math.abs(size.width * size.height - expectWidth * expectHeight);
+        supportSize.remove(0);
+        Iterator<Camera.Size> iterator = supportSize.iterator();
+
         //遍历
         while (iterator.hasNext()) {
             Camera.Size next = iterator.next();
             Log.d(TAG, "支持 " + next.width + "x" + next.height);
-            int n = Math.abs(next.height * next.width - width * height);
+            int n = Math.abs(next.height * next.width - expectWidth * expectHeight);
             if (n < m) {
                 m = n;
                 size = next;
             }
         }
-        width = size.width;
-        height = size.height;
-        parameters.setPreviewSize(width, height);
-        Log.d(TAG, "预览分辨率 width:" + width + " height:" + height);
+
+        return new Size(size.width,size.height);
     }
 
     /**
      * 设置拍照保存的图片尺寸
-     * 默认获取第一个
      * @param parameters
      */
     private void setPictureSize(Camera.Parameters parameters){
         List<Camera.Size> sizeList = parameters.getSupportedPictureSizes();
-        if (sizeList != null && sizeList.size() >0){
-            picWidth = sizeList.get(0).width;
-            picHeight = sizeList.get(0).height;
+        Size bestSize = getBestSize(picWidth,picHeight,sizeList);
+        if (bestSize != null){
+            picWidth = bestSize.getWidth();
+            picHeight = bestSize.getHeight();
+            parameters.setPictureSize(picWidth,picHeight);
         }
+
+        Log.d(TAG, "拍照分辨率 width:" + picWidth + " height:" + picHeight);
+    }
+
+    /**
+     * 设置预览尺寸
+     * @param parameters
+     */
+    private void setPreviewSize(Camera.Parameters parameters){
+        List<Camera.Size> sizeList = parameters.getSupportedPreviewSizes();
+        Size bestSize = getBestSize(previewWidth,previewHeight,sizeList);
+        if (bestSize != null){
+            previewWidth = bestSize.getWidth();
+            previewHeight = bestSize.getHeight();
+            parameters.setPreviewSize(previewWidth,previewHeight);
+        }
+        Log.d(TAG, "预览分辨率 width:" + previewWidth + " height:" + previewHeight);
     }
 
     /**
@@ -174,28 +205,28 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
                 degrees = 0;
                 //回掉
                 if (sizeChangedListener != null) {
-                    sizeChangedListener.onChanged(height, width);
+                    sizeChangedListener.onChanged(previewHeight, previewWidth);
                 }
                 break;
             case Surface.ROTATION_90: // 横屏 左边是头部(home键在右边)
                 degrees = 90;
                 //回掉
                 if (sizeChangedListener != null) {
-                    sizeChangedListener.onChanged(width, height);
+                    sizeChangedListener.onChanged(previewWidth, previewHeight);
                 }
                 break;
             case Surface.ROTATION_180:
                 degrees = 180;
                 //回掉
                 if (sizeChangedListener != null) {
-                    sizeChangedListener.onChanged(height, width);
+                    sizeChangedListener.onChanged(previewHeight, previewWidth);
                 }
                 break;
             case Surface.ROTATION_270:// 横屏 头部在右边
                 degrees = 270;
                 //回掉
                 if (sizeChangedListener != null) {
-                    sizeChangedListener.onChanged(width, height);
+                    sizeChangedListener.onChanged(previewWidth, previewHeight);
                 }
                 break;
         }
@@ -262,63 +293,6 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
         }
     }
 
-
-    private void rotate90(byte[] data) {
-        int index = 0;
-        int ySize = width * height;
-        //u和v
-        int uvHeight = height / 2;
-        //后置摄像头顺时针旋转90度
-        if (cameraId == Camera.CameraInfo.CAMERA_FACING_BACK) {
-            //将y的数据旋转之后 放入新的byte数组
-            for (int i = 0; i < width; i++) {
-                for (int j = height - 1; j >= 0; j--) {
-                    cameraBuffRotate[index++] = data[width * j + i];
-                }
-            }
-
-            //每次处理两个数据
-            for (int i = 0; i < width; i += 2) {
-                for (int j = uvHeight - 1; j >= 0; j--) {
-                    // v
-                    cameraBuffRotate[index++] = data[ySize + width * j + i];
-                    // u
-                    cameraBuffRotate[index++] = data[ySize + width * j + i + 1];
-                }
-            }
-        } else {
-            //逆时针旋转90度
-            //            for (int i = 0; i < width; i++) {
-            //                for (int j = 0; j < height; j++) {
-            //                    cameraBuffRotate[index++] = data[width * j + width - 1 - i];
-            //                }
-            //            }
-            //            //  u v
-            //            for (int i = 0; i < width; i += 2) {
-            //                for (int j = 0; j < uvHeight; j++) {
-            //                    cameraBuffRotate[index++] = data[ySize + width * j + width - 1 - i - 1];
-            //                    cameraBuffRotate[index++] = data[ySize + width * j + width - 1 - i];
-            //                }
-            //            }
-
-            //旋转并镜像
-            for (int i = 0; i < width; i++) {
-                for (int j = height - 1; j >= 0; j--) {
-                    cameraBuffRotate[index++] = data[width * j + width - 1 - i];
-                }
-            }
-            //  u v
-            for (int i = 0; i < width; i += 2) {
-                for (int j = uvHeight - 1; j >= 0; j--) {
-                    // v
-                    cameraBuffRotate[index++] = data[ySize + width * j + width - 1 - i - 1];
-                    // u
-                    cameraBuffRotate[index++] = data[ySize + width * j + width - 1 - i];
-                }
-            }
-        }
-    }
-
     //水平镜像翻转
     private Bitmap mirror(Bitmap bitmap){
         Matrix matrix = new Matrix();
@@ -377,5 +351,60 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
 
     public void setSizeChangedListener(SizeChangedListener sizeChangedListener) {
         this.sizeChangedListener = sizeChangedListener;
+    }
+
+
+    public int getPreviewWidth() {
+        return previewWidth;
+    }
+
+    public int getPreviewHeight() {
+        return previewHeight;
+    }
+
+    public int getPicWidth() {
+        return picWidth;
+    }
+
+    public int getPicHeight() {
+        return picHeight;
+    }
+
+    public String getFocusMode() {
+        return focusMode;
+    }
+
+    public void setFocusMode(String focusMode) {
+        this.focusMode = focusMode;
+    }
+
+    public int getCameraId() {
+        return cameraId;
+    }
+
+    public void setCameraId(int cameraId) {
+        this.cameraId = cameraId;
+    }
+
+    /**
+     * 设置预览尺寸
+     * @param expectWidth
+     * @param expectHeight
+     * @return
+     */
+    public void setExpectPreviewSize(int expectWidth, int expectHeight){
+        this.previewWidth = expectWidth;
+        this.previewHeight = expectHeight;
+    }
+
+    /**
+     * 设置拍照尺寸
+     * @param expectWidth
+     * @param expectHeight
+     * @return
+     */
+    public void setExpectPicSize(int expectWidth, int expectHeight){
+        this.picWidth = expectWidth;
+        this.picHeight = expectHeight;
     }
 }
