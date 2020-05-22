@@ -86,7 +86,6 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
             }
         });
 
-
         //设置数据监听接口
         wonderfulCamera.setCameraInterface(this);
 
