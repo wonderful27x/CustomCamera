@@ -1,8 +1,13 @@
 package com.example.cameratest;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -11,6 +16,9 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * TabView的测试与使用
@@ -21,6 +29,15 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //检查权限
+        List<String> permissionList = permissionCheck();
+        if (permissionList.isEmpty()){
+            //开启预览
+        }else {
+            permissionRequest(permissionList,1);
+        }
+
 //        final TabView view = findViewById(R.id.text);
 //        view.setOnClickListener(new View.OnClickListener() {
 //            @Override
@@ -68,5 +85,43 @@ public class MainActivity extends AppCompatActivity {
 
     private Drawable getDrawableFromSource(int sourceId){
         return getResources().getDrawable(sourceId);
+    }
+
+
+    //判断是否授权所有权限
+    private List<String> permissionCheck(){
+        List<String> permissions = new ArrayList<>();
+        if (!checkPermission(Manifest.permission.CAMERA)){
+            permissions.add(Manifest.permission.CAMERA);
+        }
+        return permissions;
+    }
+
+    //发起权限申请
+    private void permissionRequest(List<String> permissions,int requestCode){
+        String[] permissionArray = permissions.toArray(new String[permissions.size()]);
+        ActivityCompat.requestPermissions(this,permissionArray,requestCode);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if(requestCode == 1){
+            if (grantResults.length >0){
+                for (int result:grantResults){
+                    if (result != PackageManager.PERMISSION_GRANTED){
+                        Toast.makeText(MainActivity.this,"对不起，您拒绝了权限无法使用此功能！",Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                }
+                //开启预览
+            }else {
+                Toast.makeText(MainActivity.this,"发生未知错误！", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    //判断是否有权限
+    private boolean checkPermission(String permission){
+        return ContextCompat.checkSelfPermission(this,permission) == PackageManager.PERMISSION_GRANTED;
     }
 }

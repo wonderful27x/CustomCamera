@@ -3,6 +3,7 @@ package com.example.cameratest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
@@ -20,7 +21,7 @@ import java.util.List;
  *  @Version 1.0
  *  @Description 自定义相机
  */
-public class WonderfulCamera extends RelativeLayout{
+public class WonderfulCamera extends RelativeLayout implements CameraInterface{
 
     //相机辅助类
     private CameraHelper cameraHelper;
@@ -32,6 +33,9 @@ public class WonderfulCamera extends RelativeLayout{
     private List<CoordinateView> coordinateViews;
     //相机选择导航按钮，用于切换相机功能，如拍照、扫码
     private CustomSnakeBar<View> snakeBar;
+
+    //相机数据处理模块
+    private CameraDataFactory cameraDataFactory;
 
     //相机预览宽高
     private int previewWidth;
@@ -220,6 +224,8 @@ public class WonderfulCamera extends RelativeLayout{
 
         snakeHorizontalGap = 50;
 
+        cameraDataFactory = new CameraDataFactory();
+
         TabView tabView;
         RelativeLayout.LayoutParams params;
 
@@ -272,6 +278,7 @@ public class WonderfulCamera extends RelativeLayout{
                 if(cameraEventListener != null){
                     cameraEventListener.bottomOnClick(currentMode);
                 }
+                //拍照
                 if (cameraHelper != null){
                     cameraHelper.takePicture();
                 }
@@ -424,7 +431,7 @@ public class WonderfulCamera extends RelativeLayout{
         cameraHelper.setExpectPicSize(picWidth,picHeight);
         cameraHelper.setFocusMode(focusMode);
 
-        cameraHelper.setCameraInterface(cameraInterface);
+        cameraHelper.setCameraInterface(this);
     }
 
     //初始化控件
@@ -676,7 +683,6 @@ public class WonderfulCamera extends RelativeLayout{
         return coordinateViews;
     }
 
-
     /**
      * 带坐标的View，坐标用于指定View的摆放位置
      */
@@ -791,6 +797,15 @@ public class WonderfulCamera extends RelativeLayout{
         public void centerOnClick(int position);
         //3 -> position：当前选中的位置，代表了相机的模式
         public void bottomOnClick(int position);
+    }
+
+    //拍照回掉接口
+    @Override
+    public void picture(Bitmap bitmap, byte[] data) {
+        Bitmap picBitmap = cameraDataFactory.byteToBitmap(data);
+        if (cameraInterface != null){
+            cameraInterface.picture(picBitmap,data);
+        }
     }
 
 }

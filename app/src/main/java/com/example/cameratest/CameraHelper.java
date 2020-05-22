@@ -331,7 +331,7 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
             public void onPictureTaken(byte[] data, Camera camera) {
 //                transform(data);
                 if (cameraInterface != null){
-                    cameraInterface.pictureFetch(null,data);
+                    cameraInterface.picture(null,data);
                 }
             }
         });

@@ -20,13 +20,10 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
 
     private WonderfulCamera wonderfulCamera;
 
-    private CameraDataHandle cameraDataHandle;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_wonderful_camere);
-        cameraDataHandle = new CameraDataHandle();
         testA();
 //        testB();
 //        testC();
@@ -330,9 +327,8 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
 
 
     @Override
-    public void pictureFetch(Bitmap bitmap, byte[] data) {
-        Bitmap picBitmap = cameraDataHandle.byteToBitmap(data);
-        PictureActivity.bitmap = picBitmap;
+    public void picture(Bitmap bitmap, byte[] data) {
+        PictureActivity.bitmap = bitmap;
         Intent intent = new Intent(this,PictureActivity.class);
         startActivity(intent);
     }
