@@ -44,6 +44,9 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
     //相机预览回掉，提供给外界使用
     private Camera.PreviewCallback previewCallback;
 
+    //相机数据获取接口
+    private CameraInterface cameraInterface;
+
     public CameraHelper(Activity activity) {
         this.activity = activity;
         this.cameraId = Camera.CameraInfo.CAMERA_FACING_BACK;             //默认启用后摄
@@ -95,7 +98,7 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
             camera.setParameters(parameters);
             //数据缓存区,使用yuv数据格式计算大小
             cameraBuff = new byte[previewWidth * previewHeight * 3 / 2];
-            cameraBuffRotate = new byte[previewWidth * previewHeight * 3 / 2];
+            cameraBuffRotate = new byte[picWidth * picHeight * 3 / 2];
             camera.addCallbackBuffer(cameraBuff);
             camera.setPreviewCallbackWithBuffer(this);
             //设置渲染点surfaceHolder
@@ -261,6 +264,62 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
         camera.addCallbackBuffer(cameraBuff);
     }
 
+    private void rotate90(byte[] data) {
+        int index = 0;
+        int ySize = picWidth * picHeight;
+        //u和v
+        int uvHeight = picWidth / 2;
+        //后置摄像头顺时针旋转90度
+        if (cameraId == Camera.CameraInfo.CAMERA_FACING_BACK) {
+            //将y的数据旋转之后 放入新的byte数组
+            for (int i = 0; i < picWidth; i++) {
+                for (int j = picHeight - 1; j >= 0; j--) {
+                    cameraBuffRotate[index++] = data[picWidth * j + i];
+                }
+            }
+
+            //每次处理两个数据
+            for (int i = 0; i < picWidth; i += 2) {
+                for (int j = uvHeight - 1; j >= 0; j--) {
+                    // v
+                    cameraBuffRotate[index++] = data[ySize + picWidth * j + i];
+                    // u
+                    cameraBuffRotate[index++] = data[ySize + picWidth * j + i + 1];
+                }
+            }
+        } else {
+            //逆时针旋转90度
+            //            for (int i = 0; i < width; i++) {
+            //                for (int j = 0; j < height; j++) {
+            //                    cameraBuffRotate[index++] = data[width * j + width - 1 - i];
+            //                }
+            //            }
+            //            //  u v
+            //            for (int i = 0; i < width; i += 2) {
+            //                for (int j = 0; j < uvHeight; j++) {
+            //                    cameraBuffRotate[index++] = data[ySize + width * j + width - 1 - i - 1];
+            //                    cameraBuffRotate[index++] = data[ySize + width * j + width - 1 - i];
+            //                }
+            //            }
+
+            //旋转并镜像
+            for (int i = 0; i < picWidth; i++) {
+                for (int j = picHeight - 1; j >= 0; j--) {
+                    cameraBuffRotate[index++] = data[picWidth * j + picWidth - 1 - i];
+                }
+            }
+            //  u v
+            for (int i = 0; i < picWidth; i += 2) {
+                for (int j = uvHeight - 1; j >= 0; j--) {
+                    // v
+                    cameraBuffRotate[index++] = data[ySize + picWidth * j + picWidth - 1 - i - 1];
+                    // u
+                    cameraBuffRotate[index++] = data[ySize + picWidth * j + picWidth - 1 - i];
+                }
+            }
+        }
+    }
+
 
     /**
      * 拍照
@@ -270,26 +329,25 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
         camera.takePicture(null, null,new Camera.PictureCallback() {
             @Override
             public void onPictureTaken(byte[] data, Camera camera) {
-                byteToBitmap(data);
-                PictureActivity.bitmap = picBitmap;
-                Intent intent = new Intent(activity,PictureActivity.class);
-                activity.startActivity(intent);
+//                transform(data);
+                if (cameraInterface != null){
+                    cameraInterface.pictureFetch(null,data);
+                }
             }
         });
     }
 
     /**
-     * 将byte类型的原始数据转换成bitmap
+     * 旋转图像以获得正常的图像
      */
-    private void byteToBitmap(byte[] data){
-        picBitmap = BitmapFactory.decodeByteArray(data,0,data.length);
+    private void transform(byte[] data){
         //前摄旋转270度
         if (cameraId == Camera.CameraInfo.CAMERA_FACING_FRONT){
-            picBitmap = rotate(picBitmap,270.0f);
+            rotate90(data);
         }
         //后摄旋转90度
         else {
-            picBitmap = rotate(picBitmap,90.0f);
+            rotate90(data);
         }
     }
 
@@ -406,5 +464,9 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
     public void setExpectPicSize(int expectWidth, int expectHeight){
         this.picWidth = expectWidth;
         this.picHeight = expectHeight;
+    }
+
+    public void setCameraInterface(CameraInterface cameraInterface) {
+        this.cameraInterface = cameraInterface;
     }
 }

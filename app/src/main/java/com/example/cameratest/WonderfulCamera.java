@@ -20,7 +20,7 @@ import java.util.List;
  *  @Version 1.0
  *  @Description 自定义相机
  */
-public class WonderfulCamera extends RelativeLayout {
+public class WonderfulCamera extends RelativeLayout{
 
     //相机辅助类
     private CameraHelper cameraHelper;
@@ -87,6 +87,9 @@ public class WonderfulCamera extends RelativeLayout {
     private EdgeButtonListener edgeButtonListener;
     //相机事件监听，注意这里包括三个事件，1：相机模式选择，2：当前模式下的中间按钮点击事件，3：当前模式下底部按钮点击事件
     private CameraEventListener cameraEventListener;
+
+    //相机数据获取接口
+    private CameraInterface cameraInterface;
 
     public WonderfulCamera(Context context) {
         this(context,null);
@@ -269,6 +272,9 @@ public class WonderfulCamera extends RelativeLayout {
                 if(cameraEventListener != null){
                     cameraEventListener.bottomOnClick(currentMode);
                 }
+                if (cameraHelper != null){
+                    cameraHelper.takePicture();
+                }
             }
         });
         componentPic.bottomButton = tabView;
@@ -417,6 +423,8 @@ public class WonderfulCamera extends RelativeLayout {
         cameraHelper.setExpectPreviewSize(previewWidth,previewHeight);
         cameraHelper.setExpectPicSize(picWidth,picHeight);
         cameraHelper.setFocusMode(focusMode);
+
+        cameraHelper.setCameraInterface(cameraInterface);
     }
 
     //初始化控件
@@ -668,6 +676,7 @@ public class WonderfulCamera extends RelativeLayout {
         return coordinateViews;
     }
 
+
     /**
      * 带坐标的View，坐标用于指定View的摆放位置
      */
@@ -742,6 +751,10 @@ public class WonderfulCamera extends RelativeLayout {
         return componentDepot;
     }
 
+    public void setCameraInterface(CameraInterface cameraInterface) {
+        this.cameraInterface = cameraInterface;
+    }
+
     //构建CoordinateView
     public CoordinateView createCoordinateView(){
         return new CoordinateView();
@@ -779,4 +792,5 @@ public class WonderfulCamera extends RelativeLayout {
         //3 -> position：当前选中的位置，代表了相机的模式
         public void bottomOnClick(int position);
     }
+
 }

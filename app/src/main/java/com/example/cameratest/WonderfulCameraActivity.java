@@ -2,30 +2,33 @@ package com.example.cameratest;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
-
 import java.util.List;
 
-public class WonderfulCameraActivity extends AppCompatActivity {
+public class WonderfulCameraActivity extends AppCompatActivity implements CameraInterface{
 
     private static final String TAG = "WonderfulCameraActivity";
 
     private WonderfulCamera wonderfulCamera;
 
+    private CameraDataHandle cameraDataHandle;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_wonderful_camere);
-//        testA();
-        testB();
+        cameraDataHandle = new CameraDataHandle();
+        testA();
+//        testB();
 //        testC();
     }
 
@@ -62,7 +65,7 @@ public class WonderfulCameraActivity extends AppCompatActivity {
             }
         });
 
-        //设置相机选择模式的监听，如选择了拍照或扫码模式
+        ////相机事件监听，注意这里包括三个事件，1：相机模式选择，2：当前模式下的中间按钮点击事件，3：当前模式下底部按钮点击事件
         wonderfulCamera.setCameraModeSelectListener(new WonderfulCamera.CameraEventListener() {
             @Override
             public void onModeSelect(View view, int position, String message) {
@@ -83,6 +86,9 @@ public class WonderfulCameraActivity extends AppCompatActivity {
             }
         });
 
+
+        //设置数据监听接口
+        wonderfulCamera.setCameraInterface(this);
 
         //初始化
         wonderfulCamera.init();
@@ -126,7 +132,7 @@ public class WonderfulCameraActivity extends AppCompatActivity {
             }
         });
 
-        //设置相机选择模式的监听，如选择了拍照或扫码模式
+        ////相机事件监听，注意这里包括三个事件，1：相机模式选择，2：当前模式下的中间按钮点击事件，3：当前模式下底部按钮点击事件
         wonderfulCamera.setCameraModeSelectListener(new WonderfulCamera.CameraEventListener() {
             @Override
             public void onModeSelect(View view, int position, String message) {
@@ -253,7 +259,7 @@ public class WonderfulCameraActivity extends AppCompatActivity {
             }
         });
 
-        //设置相机选择模式的监听，如选择了拍照或扫码模式
+        //相机事件监听，注意这里包括三个事件，1：相机模式选择，2：当前模式下的中间按钮点击事件，3：当前模式下底部按钮点击事件
         wonderfulCamera.setCameraModeSelectListener(new WonderfulCamera.CameraEventListener() {
             @Override
             public void onModeSelect(View view, int position, String message) {
@@ -321,5 +327,14 @@ public class WonderfulCameraActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         wonderfulCamera.releaseCamera();
+    }
+
+
+    @Override
+    public void pictureFetch(Bitmap bitmap, byte[] data) {
+        Bitmap picBitmap = cameraDataHandle.byteToBitmap(data);
+        PictureActivity.bitmap = picBitmap;
+        Intent intent = new Intent(this,PictureActivity.class);
+        startActivity(intent);
     }
 }

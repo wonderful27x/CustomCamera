@@ -18,8 +18,6 @@ import java.util.List;
  *  @Date 2020-5-14
  *  @Version 1.0
  *  @Description 自定义SnakeBar，类似导航栏的功能,结合TabView可实现强大的功能
- *
- *  TODO 控件还有一个bug，当子控件的宽高不一致的时候没有考虑解决策略
  */
 public class CustomSnakeBar<T> extends LinearLayout {
 
