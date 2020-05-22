@@ -21,10 +21,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Intent intent = new Intent(MainActivity.this,Main2Activity.class);
-        Intent intentCamera = new Intent(MainActivity.this,CameraActivity.class);
-        Intent intentCameraWonderful = new Intent(MainActivity.this,WonderfulCameraActivity.class);
-        startActivity(intentCameraWonderful);
 //        final TabView view = findViewById(R.id.text);
 //        view.setOnClickListener(new View.OnClickListener() {
 //            @Override
@@ -50,13 +46,18 @@ public class MainActivity extends AppCompatActivity {
         tabView.setBottomTitleColor(Color.parseColor("#aaaaaa"));
 
         tabView.setClickable(true);
-//        tabView.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                TabView view = (TabView) v;
-//                view.setChecked(!view.isChecked());
-//            }
-//        });
+        tabView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                TabView view = (TabView) v;
+                view.setChecked(!view.isChecked());
+
+                Intent intent = new Intent(MainActivity.this,Main2Activity.class);
+                Intent intentCamera = new Intent(MainActivity.this,CameraActivity.class);
+                Intent intentCameraWonderful = new Intent(MainActivity.this,WonderfulCameraActivity.class);
+                startActivity(intentCameraWonderful);
+            }
+        });
 
         tabView.init();
 

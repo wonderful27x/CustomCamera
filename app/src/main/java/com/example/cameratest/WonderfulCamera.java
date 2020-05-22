@@ -65,14 +65,25 @@ public class WonderfulCamera extends RelativeLayout {
     //默认情况下右边按钮
     private CoordinateView rightDefault;
 
-    private Context context;
+    //控件大小回调标志，默认只要发生改变就回调
+    //用户可手动截断
+    public boolean keepValueSize = true;
+    //当前选中的模式，如拍照或扫码，由于相机选择导航按钮可定制，
+    //所以currentMode实际上代表的是选中的位置
+    private int currentMode;
 
-    public boolean sizeValued = false;
+    private Context context;
 
     //控件大小发生改变时的接口回调，这时就能够获取控件的大小信息了
     //在用户自定义控件任意指定控件的坐标时非常有用
-    //默认情况下此接口只回调一次，如需多次回调则需手动将sizeValued设置为false
+    //默认情况下此接口会持续触发，用户可通过keepValueSize标志手动截断
+    //TODO 测试发现一般会回调两次，第二次才是准确的
     private SizeChangedListener sizeChangedListener;
+
+    //边缘按钮监听，即对应返回按钮和相册按钮
+    private EdgeButtonListener edgeButtonListener;
+    //相机事件监听，注意这里包括三个事件，1：相机模式选择，2：当前模式下的中间按钮点击事件，3：当前模式下底部按钮点击事件
+    private CameraEventListener cameraEventListener;
 
     public WonderfulCamera(Context context) {
         this(context,null);
@@ -95,8 +106,7 @@ public class WonderfulCamera extends RelativeLayout {
         leftDefault.x = marginLeft;
         leftDefault.y = marginTop;
         if (sizeChangedListener != null){
-            if (!sizeValued){
-                sizeValued = true;
+            if (keepValueSize){
                 sizeChangedListener.onSizeChanged(getMeasuredWidth(),getMeasuredHeight());
             }
         }
@@ -107,10 +117,10 @@ public class WonderfulCamera extends RelativeLayout {
         int width = getMeasuredWidth();
         int height = getMeasuredHeight();
 
-        int left;
-        int top ;
-        int right;
-        int bottom;
+        int left = 0;
+        int top = 0;
+        int right = 0;
+        int bottom = 0;
 
         //布局surface，充满屏幕
         surfaceView.layout(0,0,width,height);
@@ -120,13 +130,13 @@ public class WonderfulCamera extends RelativeLayout {
             left = marginLeft;
             top = height - snakeBar.getMeasuredHeight() - marginBottom;
             right = width - marginRight;
-            bottom = height - marginBottom;
+            bottom = top + snakeBar.getMeasuredHeight();
 
-        }else {
+        }else if("top".equals(snakePosition)){
             left = marginLeft;
             top = marginTop;
             right = width - marginRight;
-            bottom = snakeBar.getMeasuredHeight() + marginTop;
+            bottom = top + snakeBar.getMeasuredHeight();
         }
         snakeBar.layout(left,top,right,bottom);
 
@@ -152,18 +162,18 @@ public class WonderfulCamera extends RelativeLayout {
                     left = centerX - depot.bottomButton.getMeasuredWidth() / 2;
                     top = height - depot.bottomButton.getMeasuredHeight() - snakeBar.getMeasuredHeight() - marginBottom;
                     right = left + depot.bottomButton.getMeasuredWidth();
-                    bottom = top + depot.bottomButton.getMeasuredHeight() - marginBottom;
-                }else {
+                    bottom = top + depot.bottomButton.getMeasuredHeight();
+                }else if("top".equals(snakePosition)){
                     left = centerX - depot.bottomButton.getMeasuredWidth() / 2;
-                    top = marginTop;
+                    top = height - depot.bottomButton.getMeasuredHeight() - marginBottom;
                     right = left + depot.bottomButton.getMeasuredWidth();
-                    bottom = top + depot.bottomButton.getMeasuredHeight() + marginTop;
+                    bottom = top + depot.bottomButton.getMeasuredHeight();
                 }
                 depot.bottomButton.layout(left,top,right,bottom);
             }
         }
 
-        //用户自定义buj
+        //用户自定义控件
         if(coordinateViews != null){
             for (CoordinateView view:coordinateViews){
                 view.view.layout(view.x,view.y,view.x + view.view.getMeasuredWidth(),view.y + view.view.getMeasuredHeight());
@@ -200,7 +210,10 @@ public class WonderfulCamera extends RelativeLayout {
         snakePaddingRight = 5;
         snakePaddingBottom = 5;
 
+        currentMode = 0;
+
         TabView tabView;
+        RelativeLayout.LayoutParams params;
 
         //固定控件
         componentDepots = new ArrayList<>();
@@ -208,31 +221,57 @@ public class WonderfulCamera extends RelativeLayout {
         ComponentDepot componentPic = new ComponentDepot();
         //centerShape
         tabView = new TabView(context);
-        tabView.setTopDrawable(getDrawableFromSource(R.drawable.com_input_box_clear));
-        tabView.setBottomDrawable(getDrawableFromSource(R.drawable.com_input_box_clear));
+        params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        tabView.setLayoutParams(params);
+        tabView.setTopDrawable(getDrawableFromSource(R.drawable.video_show_play));
+        tabView.setBottomDrawable(getDrawableFromSource(R.drawable.video_show_play));
         tabView.init();
         componentPic.centerShape = tabView;
 
         //centerButton
         tabView = new TabView(context);
-        tabView.setTopDrawable(getDrawableFromSource(R.drawable.load_image3));
+        params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        tabView.setLayoutParams(params);
+        tabView.setTopDrawable(getDrawableFromSource(R.drawable.com_input_box_clear));
         tabView.setBottomDrawable(getDrawableFromSource(R.drawable.load_image2));
-        tabView.setTopTitle("点亮");
-        tabView.setBottomTitle("点亮");
+        tabView.setTopTitle("拍点亮");
+        tabView.setBottomTitle("拍点亮");
         tabView.setTopTitleColor(Color.parseColor("#333333"));
         tabView.setBottomTitleColor(Color.parseColor("#aaaaaa"));
         tabView.init();
+        tabView.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                TabView view = (TabView) v;
+                view.setChecked(!view.isChecked());
+                if(cameraEventListener != null){
+                    cameraEventListener.centerOnClick(currentMode);
+                }
+            }
+        });
         componentPic.centerButton = tabView;
 
         //bottomButton
         tabView = new TabView(context);
+        params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        tabView.setLayoutParams(params);
         tabView.setTopDrawable(getDrawableFromSource(R.drawable.icon_toggle_white_circle));
         tabView.setBottomDrawable(getDrawableFromSource(R.drawable.icon_toggle_white_circle));
         tabView.init();
+        tabView.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(cameraEventListener != null){
+                    cameraEventListener.bottomOnClick(currentMode);
+                }
+            }
+        });
         componentPic.bottomButton = tabView;
 
         //snakeBar对应的按钮
         tabView = new TabView(context);
+        params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        tabView.setLayoutParams(params);
         tabView.setTopDrawable(getDrawableFromSource(R.drawable.load_image3));
         tabView.setBottomDrawable(getDrawableFromSource(R.drawable.load_image2));
         tabView.setTopTitle("拍照");
@@ -247,30 +286,56 @@ public class WonderfulCamera extends RelativeLayout {
         ComponentDepot componentScanCode = new ComponentDepot();
         //centerShape
         tabView = new TabView(context);
-        tabView.setTopDrawable(getDrawableFromSource(R.drawable.com_input_box_clear));
-        tabView.setBottomDrawable(getDrawableFromSource(R.drawable.com_input_box_clear));
+        params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        tabView.setLayoutParams(params);
+        tabView.setTopDrawable(getDrawableFromSource(R.drawable.xj_photo_up));
+        tabView.setBottomDrawable(getDrawableFromSource(R.drawable.xj_photo_up));
         tabView.init();
         componentScanCode.centerShape = tabView;
 
         //centerButton
         tabView = new TabView(context);
-        tabView.setTopDrawable(getDrawableFromSource(R.drawable.load_image3));
+        params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        tabView.setLayoutParams(params);
+        tabView.setTopDrawable(getDrawableFromSource(R.drawable.com_input_box_clear));
         tabView.setBottomDrawable(getDrawableFromSource(R.drawable.load_image2));
-        tabView.setTopTitle("点亮");
-        tabView.setBottomTitle("点亮");
+        tabView.setTopTitle("扫点亮");
+        tabView.setBottomTitle("扫点亮");
         tabView.setTopTitleColor(Color.parseColor("#333333"));
         tabView.setBottomTitleColor(Color.parseColor("#aaaaaa"));
         tabView.init();
+        tabView.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                TabView view = (TabView) v;
+                view.setChecked(!view.isChecked());
+                if(cameraEventListener != null){
+                    cameraEventListener.centerOnClick(currentMode);
+                }
+            }
+        });
         componentScanCode.centerButton = tabView;
 
         //bottomButton
         tabView = new TabView(context);
-        tabView.setTopDrawable(getDrawableFromSource(R.drawable.icon_toggle_white_circle));
-        tabView.setBottomDrawable(getDrawableFromSource(R.drawable.icon_toggle_white_circle));
+        params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        tabView.setLayoutParams(params);
+        tabView.setTopDrawable(getDrawableFromSource(R.drawable.com_input_box_clear));
+        tabView.setBottomDrawable(getDrawableFromSource(R.drawable.com_input_box_clear));
         tabView.init();
+        tabView.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(cameraEventListener != null){
+                    cameraEventListener.bottomOnClick(currentMode);
+                }
+            }
+        });
         componentScanCode.bottomButton = tabView;
 
         tabView = new TabView(context);
+        params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        tabView.setLayoutParams(params);
         tabView.setTopDrawable(getDrawableFromSource(R.drawable.load_image3));
         tabView.setBottomDrawable(getDrawableFromSource(R.drawable.load_image2));
         tabView.setTopTitle("扫一扫");
@@ -284,12 +349,13 @@ public class WonderfulCamera extends RelativeLayout {
         componentDepots.add(componentPic);
         componentDepots.add(componentScanCode);
 
-
         //用户自定义控件
         coordinateViews = new ArrayList<>();
         //返回按钮
         leftDefault = new CoordinateView();
         tabView = new TabView(context);
+        params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        tabView.setLayoutParams(params);
         tabView.setResponseMode(0);
         tabView.setTopDrawable(getDrawableFromSource(R.drawable.bar_black_back));
         tabView.setBottomDrawable(getDrawableFromSource(R.drawable.bar_black_back));
@@ -300,6 +366,8 @@ public class WonderfulCamera extends RelativeLayout {
         //相册按钮
         rightDefault = new CoordinateView();
         tabView = new TabView(context);
+        params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        tabView.setLayoutParams(params);
         tabView.setResponseMode(0);
         tabView.setTopDrawable(getDrawableFromSource(R.drawable.album));
         tabView.setBottomDrawable(getDrawableFromSource(R.drawable.album));
@@ -309,7 +377,6 @@ public class WonderfulCamera extends RelativeLayout {
 
         coordinateViews.add(leftDefault);
         coordinateViews.add(rightDefault);
-
     }
 
     public void setComponentDepots(List<ComponentDepot> componentDepots) {
@@ -325,6 +392,9 @@ public class WonderfulCamera extends RelativeLayout {
     }
 
     public void setSnakePosition(String snakePosition) {
+        if (!"top".equals(snakePosition) && !"bottom".equals(snakePosition)){
+            throw new IllegalArgumentException(getClass().getSimpleName() + ".setSnakePosition: 此方法只接受 top/bottom 两种类型!");
+        }
         this.snakePosition = snakePosition;
     }
 
@@ -350,13 +420,16 @@ public class WonderfulCamera extends RelativeLayout {
         surfaceView = new SurfaceView(context);
         //初始化相机选择导航按钮snakeBar
         snakeBar = new CustomSnakeBar<>(context);
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        snakeBar.setLayoutParams(params);
+        //设置padding
         snakeBar.setMidPaddingLeft(snakePaddingLeft);
         snakeBar.setMidPaddingTop(snakePaddingTop);
         snakeBar.setMidPaddingRight(snakePaddingRight);
         snakeBar.setMidPaddingBottom(snakePaddingBottom);
-        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        snakeBar.setLayoutParams(params);
+        //横向均据摆放间隔
         snakeBar.setGapHorizontal(50);
+        //设置snakeBar的中间按钮
         List<View> views = new ArrayList<>();
         if (componentDepots != null){
             for (ComponentDepot depot:componentDepots){
@@ -364,8 +437,70 @@ public class WonderfulCamera extends RelativeLayout {
             }
         }
         snakeBar.addChildren(views);
+        //TODO test
         snakeBar.setBackgroundColor(Color.YELLOW);
+
+        //如果snakeBar在上方则启用snakeBar的左右按钮并隐藏默认的左右按钮
+        //否则说明snakeBar在下方，使用默认左右按钮
+        if ("top".equals(snakePosition)){
+            snakeBar.enableLeftButton(null);
+            snakeBar.enableRightButton(null);
+            leftDefault.view.setVisibility(GONE);
+            rightDefault.view.setVisibility(GONE);
+            //设置左右按钮的点击事件监听
+            snakeBar.setLeftClickListener(new CustomSnakeBar.LeftClickListener() {
+                @Override
+                public void onLeftClick(View view) {
+                    if(edgeButtonListener != null){
+                        edgeButtonListener.onLeftClick(view);
+                    }
+                }
+            });
+            snakeBar.setRightClickListener(new CustomSnakeBar.RightClickListener() {
+                @Override
+                public void onRightClick(View view) {
+                    if(edgeButtonListener != null){
+                        edgeButtonListener.onRightClick(view);
+                    }
+                }
+            });
+        }else if("bottom".equals(snakePosition)){
+            //设置左右按钮的点击事件监听
+            leftDefault.view.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if(edgeButtonListener != null){
+                        edgeButtonListener.onLeftClick(v);
+                    }
+                }
+            });
+            rightDefault.view.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if(edgeButtonListener != null){
+                        edgeButtonListener.onRightClick(v);
+                    }
+                }
+            });
+        }
+
+        //设置中间按钮监听
+        snakeBar.setOnItemClickListener(new CustomSnakeBar.OnItemClickListener() {
+            @Override
+            public void onItemClick(View view, int position) {
+                setCurrentMode(position,false);
+                if (cameraEventListener != null){
+                    TabView tabView = (TabView) view;
+                    cameraEventListener.onModeSelect(view,position,tabView.getTopTitle());
+                }
+            }
+        });
+
+        //初始化snake
         snakeBar.init();
+
+        //默认选择位置
+        setCurrentMode(0,true);
     }
 
     //添加到窗口中
@@ -452,6 +587,74 @@ public class WonderfulCamera extends RelativeLayout {
         return getResources().getDrawable(sourceId);
     }
 
+    public int getCurrentMode() {
+        return currentMode;
+    }
+
+    //设置当前选中模式外界调用
+    public void setCurrentMode(int currentMode) {
+        setCurrentMode(currentMode,true);
+    }
+
+    //设置当前选中模式内部调用
+    private void setCurrentMode(int currentMode,boolean snake) {
+        this.currentMode = currentMode;
+        if (componentDepots != null){
+            for (int i=0; i<componentDepots.size(); i++){
+                //先隐藏非选中控件
+                if (currentMode != i){
+                    componentDepots.get(i).centerShape.setVisibility(INVISIBLE);
+                    componentDepots.get(i).centerButton.setVisibility(INVISIBLE);
+                    componentDepots.get(i).bottomButton.setVisibility(INVISIBLE);
+                }
+                //显示选中控件
+                else {
+                    componentDepots.get(i).centerShape.setVisibility(VISIBLE);
+                    componentDepots.get(i).centerButton.setVisibility(VISIBLE);
+                    componentDepots.get(i).bottomButton.setVisibility(VISIBLE);
+                }
+            }
+        }
+        //设置snakeBar的选中项
+        if (snake){
+            snakeBar.setChoosePosition(currentMode);
+        }
+    }
+
+    public void releaseCamera(){
+        cameraHelper.stopPreview();
+    }
+
+    /**
+     * 如果默认的功能无法满足需求，调用此方法强制返回一个相机管理类
+     * @return
+     */
+    public CameraHelper forceRequestCamera(){
+        return cameraHelper;
+    }
+
+    /**
+     * 如果默认的功能无法满足需求，调用此方法强制返回一个元件仓库集合
+     * 每个元件仓库代表相机的一种操作类型，如拍照或扫码，这个元件仓库主要包含4个元素
+     * 1：shape，可用于扫码框的实现
+     * 2：centerButton,中心按钮，可用于手电筒的开关
+     * 3：bottomButton,底部按钮，可用于点击拍照
+     * 4：当前模式下的导航栏按钮
+     * 可以修改、增加、删除元件来达到自己的目的
+     * @return
+     */
+    public List<ComponentDepot> forceRequestComponentDepot(){
+        return componentDepots;
+    }
+
+    /**
+     * 如果通过修改增加默认属性仍然无法满足需求，调用此方法强制返回一个自定义View集合
+     * @return
+     */
+    public List<CoordinateView> forceRequestCoordinateView(){
+        return coordinateViews;
+    }
+
     /**
      * 带坐标的View，坐标用于指定View的摆放位置
      */
@@ -473,11 +676,94 @@ public class WonderfulCamera extends RelativeLayout {
         public View targetTypeView;  //与snakeBar对应的按钮
     }
 
-    public SizeChangedListener getSizeChangedListener() {
-        return sizeChangedListener;
+    /**
+     * 构建一个元件仓库给外界使用，自己new容易出现空指针
+     * @return
+     */
+    public ComponentDepot createComponentDepot(){
+        ComponentDepot componentDepot = new ComponentDepot();
+        TabView tabView;
+        RelativeLayout.LayoutParams params;
+        //centerShape
+        tabView = new TabView(context);
+        params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        tabView.setLayoutParams(params);
+        componentDepot.centerShape = tabView;
+
+        //centerButton
+        tabView = new TabView(context);
+        params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        tabView.setLayoutParams(params);
+        tabView.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                TabView view = (TabView) v;
+                view.setChecked(!view.isChecked());
+                if(cameraEventListener != null){
+                    cameraEventListener.centerOnClick(currentMode);
+                }
+            }
+        });
+        componentDepot.centerButton = tabView;
+
+        //bottomButton
+        tabView = new TabView(context);
+        params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        tabView.setLayoutParams(params);
+        tabView.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(cameraEventListener != null){
+                    cameraEventListener.bottomOnClick(currentMode);
+                }
+            }
+        });
+        componentDepot.bottomButton = tabView;
+
+        //snakeBar对应的按钮
+        tabView = new TabView(context);
+        params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        tabView.setLayoutParams(params);
+        componentDepot.targetTypeView = tabView;
+
+        return componentDepot;
     }
 
+    //构建CoordinateView
+    public CoordinateView createCoordinateView(){
+        return new CoordinateView();
+    }
+
+    public void setSizeChangedListener(SizeChangedListener sizeChangedListener) {
+        this.sizeChangedListener = sizeChangedListener;
+    }
+
+    public void setEdgeButtonListener(EdgeButtonListener edgeButtonListener) {
+        this.edgeButtonListener = edgeButtonListener;
+    }
+
+    public void setCameraModeSelectListener(CameraEventListener cameraEventListener) {
+        this.cameraEventListener = cameraEventListener;
+    }
+
+    //控件大小发生改变的监听
     public interface SizeChangedListener{
         public void onSizeChanged(int width,int height);
+    }
+
+    //左右按钮的监听，即对应返回按钮和相册按钮
+    public interface EdgeButtonListener{
+        public void onLeftClick(View view);
+        public void onRightClick(View view);
+    }
+
+    //相机事件监听，注意这里包括三个事件，1：相机模式选择，2：当前模式下的中间按钮点击事件，3：当前模式下底部按钮点击事件
+    public interface CameraEventListener{
+        //1 -> view:选中的View，position：选中的位置，代表了相机的模式，message：选中模式的字符串描述，和按钮的名字一致
+        public void onModeSelect(View view, int position,String message);
+        //2 -> position：当前选中的位置，代表了相机的模式
+        public void centerOnClick(int position);
+        //3 -> position：当前选中的位置，代表了相机的模式
+        public void bottomOnClick(int position);
     }
 }
