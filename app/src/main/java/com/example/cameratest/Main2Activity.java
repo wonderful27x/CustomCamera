@@ -122,7 +122,7 @@ public class Main2Activity extends AppCompatActivity {
         CustomSnakeBar<TabView> snakeBar = findViewById(R.id.snake);
 
         List<TabView> views = new ArrayList<>();
-        for (int i=0; i<3; i++){
+        for (int i=0; i<2; i++){
             TabView tabView = new TabView(this);
             tabView.setTopDrawable(getDrawableFromSource(R.drawable.load_image3));
             tabView.setBottomDrawable(getDrawableFromSource(R.drawable.load_image2));
@@ -130,8 +130,20 @@ public class Main2Activity extends AppCompatActivity {
             tabView.setBottomTitle("德芙");
             tabView.setTopTitleColor(Color.parseColor("#333333"));
             tabView.setBottomTitleColor(Color.parseColor("#aaaaaa"));
+            tabView.setBackgroundColor(Color.GREEN);
             views.add(tabView);
         }
+
+        TabView tabView = new TabView(this);
+        tabView.setTopDrawable(getDrawableFromSource(R.drawable.load_image3));
+        tabView.setBottomDrawable(getDrawableFromSource(R.drawable.load_image2));
+        tabView.setTopTitle("德芙abcdef");
+        tabView.setBottomTitle("德芙abcdef");
+        tabView.setTopTitleColor(Color.parseColor("#333333"));
+        tabView.setBottomTitleColor(Color.parseColor("#aaaaaa"));
+        tabView.setBackgroundColor(Color.GREEN);
+        views.add(tabView);
+
         snakeBar.addChildren(views);
 
         snakeBar.enableLeftButton(null);

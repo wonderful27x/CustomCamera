@@ -19,4 +19,6 @@
         app:rightButtonPaddingRight="10dp"
         app:gapHorizontal="10dp"
         app:midItemWidth="40dp"/>
+
+<!--    app:gapHorizontal="10dp"-->
 </LinearLayout>

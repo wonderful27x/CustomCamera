@@ -72,6 +72,9 @@ public class WonderfulCamera extends RelativeLayout {
     //所以currentMode实际上代表的是选中的位置
     private int currentMode;
 
+    //导航按钮（snakeBar中间按钮）的间隔
+    private int snakeHorizontalGap;
+
     private Context context;
 
     //控件大小发生改变时的接口回调，这时就能够获取控件的大小信息了
@@ -212,6 +215,8 @@ public class WonderfulCamera extends RelativeLayout {
 
         currentMode = 0;
 
+        snakeHorizontalGap = 50;
+
         TabView tabView;
         RelativeLayout.LayoutParams params;
 
@@ -338,8 +343,8 @@ public class WonderfulCamera extends RelativeLayout {
         tabView.setLayoutParams(params);
         tabView.setTopDrawable(getDrawableFromSource(R.drawable.load_image3));
         tabView.setBottomDrawable(getDrawableFromSource(R.drawable.load_image2));
-        tabView.setTopTitle("扫一扫");
-        tabView.setBottomTitle("扫一扫");
+        tabView.setTopTitle("扫一扫abcde");
+        tabView.setBottomTitle("扫一扫abcde");
         tabView.setTopTitleColor(Color.parseColor("#333333"));
         tabView.setBottomTitleColor(Color.parseColor("#aaaaaa"));
         tabView.setBackgroundColor(Color.GREEN);
@@ -428,7 +433,7 @@ public class WonderfulCamera extends RelativeLayout {
         snakeBar.setMidPaddingRight(snakePaddingRight);
         snakeBar.setMidPaddingBottom(snakePaddingBottom);
         //横向均据摆放间隔
-        snakeBar.setGapHorizontal(50);
+        snakeBar.setGapHorizontal(snakeHorizontalGap);
         //设置snakeBar的中间按钮
         List<View> views = new ArrayList<>();
         if (componentDepots != null){
@@ -619,6 +624,14 @@ public class WonderfulCamera extends RelativeLayout {
         if (snake){
             snakeBar.setChoosePosition(currentMode);
         }
+    }
+
+    public int getSnakeHorizontalGap() {
+        return snakeHorizontalGap;
+    }
+
+    public void setSnakeHorizontalGap(int snakeHorizontalGap) {
+        this.snakeHorizontalGap = snakeHorizontalGap;
     }
 
     public void releaseCamera(){

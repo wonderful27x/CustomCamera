@@ -25,8 +25,8 @@ public class WonderfulCameraActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_wonderful_camere);
 //        testA();
-//        testB();
-        testC();
+        testB();
+//        testC();
     }
 
     /**
@@ -200,6 +200,9 @@ public class WonderfulCameraActivity extends AppCompatActivity {
 
         //可以指定选择导航按钮的位置，默认为bottom
         wonderfulCamera.setSnakePosition("top");
+
+        //修改导航按钮的间隔
+        wonderfulCamera.setSnakeHorizontalGap(10);
 
         //初始化
         wonderfulCamera.init();

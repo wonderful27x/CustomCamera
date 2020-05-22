@@ -121,6 +121,18 @@ public class CustomSnakeBar<T> extends LinearLayout {
         typedArray.recycle();
     }
 
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        //为了保持一致性，我们将中间按钮统一大小，都设置为最大子控件的宽高
+        int maxWidth = customButtonLayout.getMaxWidth();
+        int maxHeight = customButtonLayout.getMaxHeight();
+        for (int i=0; i<customButtonLayout.getChildCount(); i++){
+            View view = customButtonLayout.getChildAt(i);
+            view.getLayoutParams().width = maxWidth;
+            view.getLayoutParams().height = maxHeight;
+        }
+    }
 
     /**
      * 添加子控件，此方法默认不开启左右按钮
@@ -431,6 +443,10 @@ public class CustomSnakeBar<T> extends LinearLayout {
             int childCount = getChildCount();
             if (childCount <= 0)return;
 
+            //由于我们统一了子控件的宽高，所以获取一个宽高就行了
+            int childWidth = getMaxWidth();
+            int childHeight = getMaxHeight();
+
             View child;
             int left;
             int right;
@@ -451,7 +467,6 @@ public class CustomSnakeBar<T> extends LinearLayout {
             top = getPaddingTop();
             //计算最左边控件的位置
             int leftNum = childCount / 2;
-            int childWidth = getMaxWidth();
 
             //偶数
             if (childCount % 2 ==0){
@@ -466,7 +481,7 @@ public class CustomSnakeBar<T> extends LinearLayout {
             for (int i=0; i<childCount; i++){
                 child = getChildAt(i);
                 right = left + childWidth;
-                bottom = top + child.getMeasuredHeight();
+                bottom = top + childHeight;
                 child.layout(left,top,right,bottom);
                 left += childWidth + gapHorizontal;
             }
@@ -483,6 +498,10 @@ public class CustomSnakeBar<T> extends LinearLayout {
             int parentWidth = getMeasuredWidth() - getPaddingLeft() - getPaddingRight();
             //获取所有子控件的总宽
             int childrenWidth = getMaxWidth() * childrenCount;
+
+            //由于我们统一了子控件的宽高，所以获取一个宽高就行了
+            int childWidth = getMaxWidth();
+            int childHeight = getMaxHeight();
 
             View child;
             int left;
@@ -508,10 +527,10 @@ public class CustomSnakeBar<T> extends LinearLayout {
                 int gap = (parentWidth - childrenWidth) / (childrenCount - 1);
                 for (int i=0; i<childrenCount; i++){
                     child = getChildAt(i);
-                    right = left + child.getMeasuredWidth();
-                    bottom = top + child.getMeasuredHeight();
+                    right = left + childWidth;
+                    bottom = top + childHeight;
                     child.layout(left,top,right,bottom);
-                    left += child.getMeasuredWidth() + gap;
+                    left += childWidth + gap;
                 }
             }
             //布局宽小于子控件总宽,获取能容纳（可见）的最大子控件数量并自动计算控件间隔，均距摆放
@@ -525,24 +544,23 @@ public class CustomSnakeBar<T> extends LinearLayout {
                 //只能显示一个控件
                 if (maxNum == 1){
                     //计算间距
-                    gap = (parentWidth - getChildAt(0).getMeasuredWidth()) / 2;
+                    gap = (parentWidth - childWidth) / 2;
                     //计算左边不可见控件的数量
                     int leftNum = (childrenCount - maxNum)/ 2;
                     //计算最左边控件的起始位置
-                    int childWidth = getChildAt(0).getMeasuredWidth();
                     left -= (getMeasuredWidth() / 2 - childWidth / 2) - (childWidth + gap) * leftNum;
                 }else {
-                    gap = (parentWidth - getChildAt(0).getMeasuredWidth() * maxNum) / (maxNum - 1);
+                    gap = (parentWidth - childWidth * maxNum) / (maxNum - 1);
                     int leftNum = (childrenCount - maxNum)/ 2;
-                    left -= (getChildAt(0).getMeasuredWidth() + gap) * leftNum;
+                    left -= (childWidth + gap) * leftNum;
                 }
                 //从左往右摆放
                 for (int i=0; i<childrenCount; i++){
                     child = getChildAt(i);
-                    right = left + child.getMeasuredWidth();
-                    bottom = top + child.getMeasuredHeight();
+                    right = left + childWidth;
+                    bottom = top + childHeight;
                     child.layout(left,top,right,bottom);
-                    left += child.getMeasuredWidth() + gap;
+                    left += childWidth + gap;
                 }
             }
 
