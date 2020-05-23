@@ -1,9 +1,7 @@
 package com.example.cameratest;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.hardware.Camera;
@@ -44,8 +42,8 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
     //相机预览回掉，提供给外界使用
     private Camera.PreviewCallback previewCallback;
 
-    //相机数据获取接口
-    private CameraInterface cameraInterface;
+    //相机数据运输接口，如拍照后将数据运输到外界
+    private CameraDataTransport cameraDataTransport;
 
     public CameraHelper(Activity activity) {
         this.activity = activity;
@@ -330,8 +328,8 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
             @Override
             public void onPictureTaken(byte[] data, Camera camera) {
 //                transform(data);
-                if (cameraInterface != null){
-                    cameraInterface.picture(null,data);
+                if (cameraDataTransport != null){
+                    cameraDataTransport.picture(null,data);
                 }
             }
         });
@@ -466,7 +464,7 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
         this.picHeight = expectHeight;
     }
 
-    public void setCameraInterface(CameraInterface cameraInterface) {
-        this.cameraInterface = cameraInterface;
+    public void setCameraDataTransport(CameraDataTransport cameraDataTransport) {
+        this.cameraDataTransport = cameraDataTransport;
     }
 }

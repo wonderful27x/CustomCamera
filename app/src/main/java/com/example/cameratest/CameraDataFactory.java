@@ -1,19 +1,18 @@
 package com.example.cameratest;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 
 /**
  *  @Author wonderful
- *  @Date 2020-5-22
+ *  @Date 2020-5-23
  *  @Version 1.0
  *  @Description 相机数据处理模块-相机数据加工厂，专门处理相机的数据，如水印、扫码、图像识别等
  */
-public class CameraDataFactory {
+public interface CameraDataFactory{
 
-    public Bitmap byteToBitmap(byte[] data){
-        Bitmap bitmap = BitmapFactory.decodeByteArray(data,0,data.length);
-        return bitmap;
-    }
+    //普通拍照功能，将原始数据转换成bitmap
+    public Bitmap picture(byte[] data);
 
+    //水印加工
+    public Bitmap pictureWatermark(Bitmap bitmap,String mark);
 }

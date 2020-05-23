@@ -21,7 +21,7 @@ import java.util.List;
  *  @Version 1.0
  *  @Description 自定义相机
  */
-public class WonderfulCamera extends RelativeLayout implements CameraInterface{
+public class WonderfulCamera extends RelativeLayout implements CameraDataTransport {
 
     //相机辅助类
     private CameraHelper cameraHelper;
@@ -33,9 +33,6 @@ public class WonderfulCamera extends RelativeLayout implements CameraInterface{
     private List<CoordinateView> coordinateViews;
     //相机选择导航按钮，用于切换相机功能，如拍照、扫码
     private CustomSnakeBar<View> snakeBar;
-
-    //相机数据处理模块
-    private CameraDataFactory cameraDataFactory;
 
     //相机预览宽高
     private int previewWidth;
@@ -79,6 +76,9 @@ public class WonderfulCamera extends RelativeLayout implements CameraInterface{
     //导航按钮（snakeBar中间按钮）的间隔
     private int snakeHorizontalGap;
 
+    //拍照类型，如加水印或普通拍照
+    private PictureType pictureType;
+
     private Context context;
 
     //控件大小发生改变时的接口回调，这时就能够获取控件的大小信息了
@@ -92,8 +92,10 @@ public class WonderfulCamera extends RelativeLayout implements CameraInterface{
     //相机事件监听，注意这里包括三个事件，1：相机模式选择，2：当前模式下的中间按钮点击事件，3：当前模式下底部按钮点击事件
     private CameraEventListener cameraEventListener;
 
-    //相机数据获取接口
-    private CameraInterface cameraInterface;
+    //相机数据处理模块-相机数据工厂，对数据进行加工处理，如水印
+    private CameraDataFactory cameraDataFactory;
+    //相机数据运输接口，将加工后的数据运输到外界
+    private CameraDataTransport cameraDataTransport;
 
     public WonderfulCamera(Context context) {
         this(context,null);
@@ -224,7 +226,10 @@ public class WonderfulCamera extends RelativeLayout implements CameraInterface{
 
         snakeHorizontalGap = 50;
 
-        cameraDataFactory = new CameraDataFactory();
+        pictureType = new PictureType();
+        pictureType.type = PicType.PIC_DEFAULT;
+
+        cameraDataFactory = new DefaultCameraDataFactory();
 
         TabView tabView;
         RelativeLayout.LayoutParams params;
@@ -259,7 +264,8 @@ public class WonderfulCamera extends RelativeLayout implements CameraInterface{
                 TabView view = (TabView) v;
                 view.setChecked(!view.isChecked());
                 if(cameraEventListener != null){
-                    cameraEventListener.centerOnClick(currentMode);
+                    TabView targetView = (TabView) componentDepots.get(currentMode).targetTypeView;
+                    cameraEventListener.centerOnClick(currentMode,view.getTopTitle(),targetView.getTopTitle());
                 }
             }
         });
@@ -275,12 +281,10 @@ public class WonderfulCamera extends RelativeLayout implements CameraInterface{
         tabView.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
+                TabView view = (TabView) v;
                 if(cameraEventListener != null){
-                    cameraEventListener.bottomOnClick(currentMode);
-                }
-                //拍照
-                if (cameraHelper != null){
-                    cameraHelper.takePicture();
+                    TabView targetView = (TabView) componentDepots.get(currentMode).targetTypeView;
+                    cameraEventListener.bottomOnClick(currentMode,view.getTopTitle(),targetView.getTopTitle());
                 }
             }
         });
@@ -328,7 +332,8 @@ public class WonderfulCamera extends RelativeLayout implements CameraInterface{
                 TabView view = (TabView) v;
                 view.setChecked(!view.isChecked());
                 if(cameraEventListener != null){
-                    cameraEventListener.centerOnClick(currentMode);
+                    TabView targetView = (TabView) componentDepots.get(currentMode).targetTypeView;
+                    cameraEventListener.centerOnClick(currentMode,view.getTopTitle(),targetView.getTopTitle());
                 }
             }
         });
@@ -344,8 +349,10 @@ public class WonderfulCamera extends RelativeLayout implements CameraInterface{
         tabView.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
+                TabView view = (TabView) v;
                 if(cameraEventListener != null){
-                    cameraEventListener.bottomOnClick(currentMode);
+                    TabView targetView = (TabView) componentDepots.get(currentMode).targetTypeView;
+                    cameraEventListener.bottomOnClick(currentMode,view.getTopTitle(),targetView.getTopTitle());
                 }
             }
         });
@@ -431,7 +438,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraInterface{
         cameraHelper.setExpectPicSize(picWidth,picHeight);
         cameraHelper.setFocusMode(focusMode);
 
-        cameraHelper.setCameraInterface(this);
+        cameraHelper.setCameraDataTransport(this);
     }
 
     //初始化控件
@@ -727,8 +734,10 @@ public class WonderfulCamera extends RelativeLayout implements CameraInterface{
             public void onClick(View v) {
                 TabView view = (TabView) v;
                 view.setChecked(!view.isChecked());
+                view.setChecked(!view.isChecked());
                 if(cameraEventListener != null){
-                    cameraEventListener.centerOnClick(currentMode);
+                    TabView targetView = (TabView) componentDepots.get(currentMode).targetTypeView;
+                    cameraEventListener.centerOnClick(currentMode,view.getTopTitle(),targetView.getTopTitle());
                 }
             }
         });
@@ -741,8 +750,10 @@ public class WonderfulCamera extends RelativeLayout implements CameraInterface{
         tabView.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
+                TabView view = (TabView) v;
                 if(cameraEventListener != null){
-                    cameraEventListener.bottomOnClick(currentMode);
+                    TabView targetView = (TabView) componentDepots.get(currentMode).targetTypeView;
+                    cameraEventListener.bottomOnClick(currentMode,view.getTopTitle(),targetView.getTopTitle());
                 }
             }
         });
@@ -757,8 +768,12 @@ public class WonderfulCamera extends RelativeLayout implements CameraInterface{
         return componentDepot;
     }
 
-    public void setCameraInterface(CameraInterface cameraInterface) {
-        this.cameraInterface = cameraInterface;
+    public void setCameraDataFactory(CameraDataFactory cameraDataFactory) {
+        this.cameraDataFactory = cameraDataFactory;
+    }
+
+    public void setCameraDataTransport(CameraDataTransport cameraDataTransport) {
+        this.cameraDataTransport = cameraDataTransport;
     }
 
     //构建CoordinateView
@@ -774,7 +789,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraInterface{
         this.edgeButtonListener = edgeButtonListener;
     }
 
-    public void setCameraModeSelectListener(CameraEventListener cameraEventListener) {
+    public void setCameraEventListener(CameraEventListener cameraEventListener) {
         this.cameraEventListener = cameraEventListener;
     }
 
@@ -792,19 +807,62 @@ public class WonderfulCamera extends RelativeLayout implements CameraInterface{
     //相机事件监听，注意这里包括三个事件，1：相机模式选择，2：当前模式下的中间按钮点击事件，3：当前模式下底部按钮点击事件
     public interface CameraEventListener{
         //1 -> view:选中的View，position：选中的位置，代表了相机的模式，message：选中模式的字符串描述，和按钮的名字一致
-        public void onModeSelect(View view, int position,String message);
-        //2 -> position：当前选中的位置，代表了相机的模式
-        public void centerOnClick(int position);
-        //3 -> position：当前选中的位置，代表了相机的模式
-        public void bottomOnClick(int position);
+        public void onModeSelect(View view, int currentMode,String message);
+        //2 -> position：当前选中的位置，代表了相机的模式，buttonName:当前按钮名字，message：选中模式的字符串描述
+        public void centerOnClick(int currentMode,String buttonName,String message);
+        //3 -> position：当前选中的位置，代表了相机的模式，buttonName:当前按钮名字，message：选中模式的字符串描述
+        public void bottomOnClick(int currentMode,String buttonName,String message);
     }
 
-    //拍照回掉接口
+    //拍照类型封装类
+    private static class PictureType{
+        //拍照类型，如加水印
+        private @PicType int type;
+        //与类型对应的一个信息存储对象，如水印内容
+        private Object object;
+    }
+
+    //拍照数据运输接口，当拍照成功后会将拍照数据运输到这里
+    //然后调用相机数据工厂进行加工，最后再将加工后的数据继续运输到外界
     @Override
     public void picture(Bitmap bitmap, byte[] data) {
-        Bitmap picBitmap = cameraDataFactory.byteToBitmap(data);
-        if (cameraInterface != null){
-            cameraInterface.picture(picBitmap,data);
+        Bitmap picBitmap = null;
+        switch (pictureType.type){
+            //普通拍照
+            case PicType.PIC_DEFAULT:
+                picBitmap = cameraDataFactory.picture(data);
+                break;
+            //水印功能
+            case PicType.PIC_WATER_MARK:
+                picBitmap = cameraDataFactory.picture(data);
+                picBitmap = cameraDataFactory.pictureWatermark(picBitmap,(String)pictureType.object);
+                break;
+            default:
+                break;
+        }
+        if (cameraDataTransport != null){
+            cameraDataTransport.picture(picBitmap,data);
+        }
+    }
+
+    /**
+     * 相机普通拍照功能，拍照后只会得到原始图片bitmap
+     */
+    public void takePicture(){
+        pictureType.type = PicType.PIC_DEFAULT;
+        if (cameraHelper != null){
+            cameraHelper.takePicture();
+        }
+    }
+
+    /**
+     * 水印拍照功能
+     */
+    public void takePictureWatermark(String content){
+        pictureType.type = PicType.PIC_WATER_MARK;
+        pictureType.object = content;
+        if (cameraHelper != null){
+            cameraHelper.takePicture();
         }
     }
 

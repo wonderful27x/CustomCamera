@@ -4,7 +4,9 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,7 +16,7 @@ import android.widget.RelativeLayout;
 import android.widget.Toast;
 import java.util.List;
 
-public class WonderfulCameraActivity extends AppCompatActivity implements CameraInterface{
+public class WonderfulCameraActivity extends AppCompatActivity implements CameraDataTransport {
 
     private static final String TAG = "WonderfulCameraActivity";
 
@@ -24,9 +26,9 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_wonderful_camere);
-        testA();
+//        testA();
 //        testB();
-//        testC();
+        testC();
     }
 
     /**
@@ -34,6 +36,8 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
      */
     private void testA(){
         wonderfulCamera = findViewById(R.id.cameraView);
+        //设置回调监听以便获取拍照数据
+        wonderfulCamera.setCameraDataTransport(this);
 
         //设置大小发生改变的监听，可获取控件的size，默认只要大小改变就会回调
         //一般情况下会回调两次，第二次才是准确的
@@ -63,28 +67,32 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
         });
 
         ////相机事件监听，注意这里包括三个事件，1：相机模式选择，2：当前模式下的中间按钮点击事件，3：当前模式下底部按钮点击事件
-        wonderfulCamera.setCameraModeSelectListener(new WonderfulCamera.CameraEventListener() {
+        wonderfulCamera.setCameraEventListener(new WonderfulCamera.CameraEventListener() {
             @Override
-            public void onModeSelect(View view, int position, String message) {
-                Log.d(TAG,"onModeSelect -> position: " + position + " mode: " + message);
-                Toast.makeText(WonderfulCameraActivity.this,"onModeSelect -> position: " + position + " mode: " + message,Toast.LENGTH_SHORT).show();
+            public void onModeSelect(View view, int currentMode,String message) {
+                Log.d(TAG,"onModeSelect -> position: " + currentMode + " mode: " + message);
+                Toast.makeText(WonderfulCameraActivity.this,"onModeSelect -> position: " + currentMode + " mode: " + message,Toast.LENGTH_SHORT).show();
             }
 
             @Override
-            public void centerOnClick(int position) {
-                Log.d(TAG,"center -> mode: " + position);
-                Toast.makeText(WonderfulCameraActivity.this,"center -> mode: " + position,Toast.LENGTH_SHORT).show();
+            public void centerOnClick(int currentMode,String buttonName,String message) {
+                Log.d(TAG,"center -> position: " + currentMode + " buttonName: " + buttonName + " mode: " + message);
+                Toast.makeText(WonderfulCameraActivity.this,"center -> position: " + currentMode + " buttonName: " + buttonName + " mode: " + message,Toast.LENGTH_SHORT).show();
             }
 
             @Override
-            public void bottomOnClick(int position) {
-                Log.d(TAG,"bottom -> mode: " + position);
-                Toast.makeText(WonderfulCameraActivity.this,"bottom -> mode: " + position,Toast.LENGTH_SHORT).show();
+            public void bottomOnClick(int currentMode,String buttonName,String message) {
+                Log.d(TAG,"bottom -> position: " + currentMode + " buttonName: " + buttonName + " mode: " + message);
+                Toast.makeText(WonderfulCameraActivity.this,"bottom -> position: " + currentMode + " buttonName: " + buttonName + " mode: " + message,Toast.LENGTH_SHORT).show();
+                //如果当前选中的是拍照模式
+                if("拍照".equals(message)){
+                    wonderfulCamera.takePicture();
+                }
             }
         });
 
         //设置数据监听接口
-        wonderfulCamera.setCameraInterface(this);
+        wonderfulCamera.setCameraDataTransport(this);
 
         //初始化
         wonderfulCamera.init();
@@ -98,6 +106,8 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
     //需求2：想多增加一个识别按钮
     private void testB(){
         wonderfulCamera = findViewById(R.id.cameraView);
+        //设置回调监听以便获取拍照数据
+        wonderfulCamera.setCameraDataTransport(this);
 
         //设置大小发生改变的监听，可获取控件的size，默认只要大小改变就会回调
         //一般情况下会回调两次，第二次才是准确的
@@ -129,23 +139,27 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
         });
 
         ////相机事件监听，注意这里包括三个事件，1：相机模式选择，2：当前模式下的中间按钮点击事件，3：当前模式下底部按钮点击事件
-        wonderfulCamera.setCameraModeSelectListener(new WonderfulCamera.CameraEventListener() {
+        wonderfulCamera.setCameraEventListener(new WonderfulCamera.CameraEventListener() {
             @Override
-            public void onModeSelect(View view, int position, String message) {
-                Log.d(TAG,"onModeSelect -> position: " + position + " mode: " + message);
-                Toast.makeText(WonderfulCameraActivity.this,"onModeSelect -> position: " + position + " mode: " + message,Toast.LENGTH_SHORT).show();
+            public void onModeSelect(View view, int currentMode,String message) {
+                Log.d(TAG,"onModeSelect -> position: " + currentMode + " mode: " + message);
+                Toast.makeText(WonderfulCameraActivity.this,"onModeSelect -> position: " + currentMode + " mode: " + message,Toast.LENGTH_SHORT).show();
             }
 
             @Override
-            public void centerOnClick(int position) {
-                Log.d(TAG,"center -> mode: " + position);
-                Toast.makeText(WonderfulCameraActivity.this,"center -> mode: " + position,Toast.LENGTH_SHORT).show();
+            public void centerOnClick(int currentMode,String buttonName,String message) {
+                Log.d(TAG,"center -> position: " + currentMode + " buttonName: " + buttonName + " mode: " + message);
+                Toast.makeText(WonderfulCameraActivity.this,"center -> position: " + currentMode + " buttonName: " + buttonName + " mode: " + message,Toast.LENGTH_SHORT).show();
             }
 
             @Override
-            public void bottomOnClick(int position) {
-                Log.d(TAG,"bottom -> mode: " + position);
-                Toast.makeText(WonderfulCameraActivity.this,"bottom -> mode: " + position,Toast.LENGTH_SHORT).show();
+            public void bottomOnClick(int currentMode,String buttonName,String message) {
+                Log.d(TAG,"bottom -> position: " + currentMode + " buttonName: " + buttonName + " mode: " + message);
+                Toast.makeText(WonderfulCameraActivity.this,"bottom -> position: " + currentMode + " buttonName: " + buttonName + " mode: " + message,Toast.LENGTH_SHORT).show();
+                //如果当前选中的是拍照模式
+                if("拍照".equals(message)){
+                    wonderfulCamera.takePicture();
+                }
             }
         });
 
@@ -218,6 +232,8 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
      */
     private void testC(){
         wonderfulCamera = findViewById(R.id.cameraView);
+        //设置回调监听以便获取拍照数据
+        wonderfulCamera.setCameraDataTransport(this);
 
         //构建一个CoordinateView，用于设定自己的自定义view
         final WonderfulCamera.CoordinateView coordinateView = wonderfulCamera.createCoordinateView();;
@@ -256,23 +272,27 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
         });
 
         //相机事件监听，注意这里包括三个事件，1：相机模式选择，2：当前模式下的中间按钮点击事件，3：当前模式下底部按钮点击事件
-        wonderfulCamera.setCameraModeSelectListener(new WonderfulCamera.CameraEventListener() {
+        wonderfulCamera.setCameraEventListener(new WonderfulCamera.CameraEventListener() {
             @Override
-            public void onModeSelect(View view, int position, String message) {
-                Log.d(TAG,"onModeSelect -> position: " + position + " mode: " + message);
-                Toast.makeText(WonderfulCameraActivity.this,"onModeSelect -> position: " + position + " mode: " + message,Toast.LENGTH_SHORT).show();
+            public void onModeSelect(View view, int currentMode,String message) {
+                Log.d(TAG,"onModeSelect -> position: " + currentMode + " mode: " + message);
+                Toast.makeText(WonderfulCameraActivity.this,"onModeSelect -> position: " + currentMode + " mode: " + message,Toast.LENGTH_SHORT).show();
             }
 
             @Override
-            public void centerOnClick(int position) {
-                Log.d(TAG,"center -> mode: " + position);
-                Toast.makeText(WonderfulCameraActivity.this,"center -> mode: " + position,Toast.LENGTH_SHORT).show();
+            public void centerOnClick(int currentMode,String buttonName,String message) {
+                Log.d(TAG,"center -> position: " + currentMode + " buttonName: " + buttonName + " mode: " + message);
+                Toast.makeText(WonderfulCameraActivity.this,"center -> position: " + currentMode + " buttonName: " + buttonName + " mode: " + message,Toast.LENGTH_SHORT).show();
             }
 
             @Override
-            public void bottomOnClick(int position) {
-                Log.d(TAG,"bottom -> mode: " + position);
-                Toast.makeText(WonderfulCameraActivity.this,"bottom -> mode: " + position,Toast.LENGTH_SHORT).show();
+            public void bottomOnClick(int currentMode,String buttonName,String message) {
+                Log.d(TAG,"bottom -> position: " + currentMode + " buttonName: " + buttonName + " mode: " + message);
+                Toast.makeText(WonderfulCameraActivity.this,"bottom -> position: " + currentMode + " buttonName: " + buttonName + " mode: " + message,Toast.LENGTH_SHORT).show();
+                //如果当前选中的是拍照模式
+                if("拍照".equals(message)){
+                    wonderfulCamera.takePicture();
+                }
             }
         });
 
@@ -310,6 +330,29 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
         //添加到集合中，
         coordinateViews.add(coordinateView);
 
+        //TODO 高级使用-数据加工厂
+        //TODO 如果相机默认数据加工不能满足需求，则可以设置自己的数据加工厂
+        wonderfulCamera.setCameraDataFactory(new CameraDataFactory() {
+
+            //普通拍照
+            @Override
+            public Bitmap picture(byte[] data) {
+                //我们做一个旋转测试
+                Bitmap bitmap;
+                bitmap =  BitmapFactory.decodeByteArray(data,0,data.length);
+                Matrix matrix = new Matrix();
+                matrix.postRotate(180);
+                bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, false);
+                return bitmap;
+            }
+
+            //水印功能
+            @Override
+            public Bitmap pictureWatermark(Bitmap bitmap, String mark) {
+                return null;
+            }
+        });
+
         //初始化
         wonderfulCamera.init();
 
@@ -326,6 +369,7 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
     }
 
 
+    //拍照后的最终数据会运输到这里，这里的数据已经经过了加工处理，如水印等
     @Override
     public void picture(Bitmap bitmap, byte[] data) {
         PictureActivity.bitmap = bitmap;
