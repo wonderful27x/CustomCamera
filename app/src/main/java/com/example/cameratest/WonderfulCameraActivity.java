@@ -8,6 +8,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.drawable.Drawable;
+import android.hardware.Camera;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -38,6 +39,9 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
         wonderfulCamera = findViewById(R.id.cameraView);
         //设置回调监听以便获取拍照数据
         wonderfulCamera.setCameraDataTransport(this);
+
+//        //设置前摄，默认后摄像
+//        wonderfulCamera.setCameraId(Camera.CameraInfo.CAMERA_FACING_FRONT);
 
         //设置大小发生改变的监听，可获取控件的size，默认只要大小改变就会回调
         //一般情况下会回调两次，第二次才是准确的
@@ -156,7 +160,7 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
             public void bottomOnClick(int currentMode,String buttonName,String message) {
                 Log.d(TAG,"bottom -> position: " + currentMode + " buttonName: " + buttonName + " mode: " + message);
                 Toast.makeText(WonderfulCameraActivity.this,"bottom -> position: " + currentMode + " buttonName: " + buttonName + " mode: " + message,Toast.LENGTH_SHORT).show();
-                //如果当前选中的是拍照模式
+                //如果当前选中的是拍照模式，则调用api进行拍照
                 if("拍照".equals(message)){
                     wonderfulCamera.takePicture();
                 }
@@ -322,6 +326,12 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
                 TabView view = (TabView) v;
                 view.setChecked(!view.isChecked());
                 Toast.makeText(WonderfulCameraActivity.this,"我的按钮",Toast.LENGTH_SHORT).show();
+
+                //TODO 作为一个测试，我们还能动态修改当前选中的模式
+//                wonderfulCamera.setCurrentMode(1);
+
+                //TODO 我们还可以随意切换摄像头
+                wonderfulCamera.switchCamera();
             }
         });
 
@@ -377,3 +387,142 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
         startActivity(intent);
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+//TODO 摄像头数据旋转，待研究
+//#define IS_FLIP_H ((FLAG_DIRECTION_FLIP_HORIZONTAL&directionFlag)!=0)
+//        #define IS_FLIP_V ((FLAG_DIRECTION_FLIP_VERTICAL&directionFlag)!=0)
+//        void NV21Transform(const unsigned char *src,const unsigned char *dst,int srcWidth,int srcHeight,int directionFlag)
+//        {
+//        unsigned char *cdst=dst;
+//        unsigned char *csrc=src;
+//        int rotate=0;
+//        int hflip=0;
+//        int vflip=0;
+//        if((FLAG_DIRECTION_ROATATION_0&directionFlag)!=0 || (FLAG_DIRECTION_ROATATION_180&directionFlag)!=0){
+//        rotate =0;
+//        }else{
+//        rotate =1;
+//        }
+//
+//        if((FLAG_DIRECTION_ROATATION_0&directionFlag)!=0 || (FLAG_DIRECTION_ROATATION_90&directionFlag)!=0){
+//        hflip = IS_FLIP_H?1:0;
+//        vflip = IS_FLIP_V?1:0;
+//        }else{
+//        if(IS_FLIP_V){
+//        hflip = IS_FLIP_H?0:1;
+//        vflip = IS_FLIP_H?0:0;
+//        }else{
+//        hflip = IS_FLIP_H?0:1;
+//        vflip = IS_FLIP_H?1:1;
+//        }
+//        }
+//        int ySize=srcHeight*srcWidth;
+//        int totalSize = ySize*3 / 2;
+//        int yStart,yStep,xStep;
+//        if(rotate==0 && hflip==0 && vflip==0){
+//        memcpy(cdst,csrc,totalSize);
+//        return;
+//        }
+//        int srcX,srcY,srcCurr;
+//        int dstX,dstY,dstCurr;
+//        int halfHeight=srcHeight>>1,halfWidth=srcWidth>>1;
+//        if(rotate==1){
+//        //transformY
+//        if(hflip==1){
+//        yStart=vflip==1?ySize-srcHeight:ySize-1;
+//        yStep=vflip==1?1:-1;
+//        xStep=-srcHeight;
+//        }else{
+//        yStart=vflip==1?0:srcHeight-1;
+//        yStep=vflip==1?1:-1;
+//        xStep=srcHeight;
+//        }
+//        srcCurr=-1;
+//        for(srcY=0;srcY<srcHeight;++srcY){
+//        dstCurr = yStart;
+//        for(srcX=0;srcX<srcWidth;++srcX){
+//        cdst[dstCurr]=csrc[++srcCurr];
+//        dstCurr+=xStep;
+//        }
+//        yStart+=yStep;
+//        }
+//        //transformVU
+//        if(hflip==1){
+//        yStart=vflip==1?totalSize-srcHeight:totalSize-2;
+//        yStep=vflip==1?2:-2;
+//        xStep=-srcHeight;
+//        }else{
+//        yStart=vflip==1?ySize:ySize+srcHeight-2;
+//        yStep=vflip==1?2:-2;
+//        xStep=srcHeight;
+//        }
+//        srcCurr=ySize-1;
+//        for(srcY=0;srcY<halfHeight;++srcY){
+//        dstCurr = yStart;
+//        for(srcX=0;srcX<halfWidth;++srcX){
+//        cdst[dstCurr]=csrc[++srcCurr];
+//        cdst[dstCurr+1]=csrc[++srcCurr];
+//        dstCurr+=xStep;
+//        }
+//        yStart+=yStep;
+//        }
+//        }else{
+//        if(vflip==1 && hflip==0){
+//        //transformY
+//        yStart = ySize-srcWidth;
+//        srcCurr=-1;
+//        for(srcY=0;srcY<srcHeight;++srcY){
+//        dstCurr = yStart-1;
+//        for(srcX=0;srcX<srcWidth;++srcX){
+//        cdst[++dstCurr]=csrc[++srcCurr];
+//        }
+//        yStart-=srcWidth;
+//        }
+//        //transformVU
+//        yStart=totalSize-srcWidth;
+//        for(srcY=0;srcY<halfHeight;++srcY){
+//        dstCurr = yStart-1;
+//        for(srcX=0;srcX<halfWidth;++srcX){
+//        cdst[++dstCurr]=csrc[++srcCurr];
+//        cdst[++dstCurr]=csrc[++srcCurr];
+//        }
+//        yStart-=srcWidth;
+//        }
+//        }else{
+//        yStep=vflip==1?-srcWidth:srcWidth;
+//        yStart=vflip==1?ySize-1:srcWidth-1;
+//        //transformY
+//        srcCurr=-1;
+//        for(srcY=0;srcY<srcHeight;++srcY){
+//        dstCurr = yStart+1;
+//        for(srcX=0;srcX<srcWidth;++srcX){
+//        cdst[--dstCurr]=csrc[++srcCurr];
+//        }
+//        yStart+=yStep;
+//        }
+//        //transformVU
+//        yStart=vflip==1?totalSize-1:ySize+srcWidth-1;
+//        for(srcY=0;srcY<halfHeight;++srcY){
+//        dstCurr = yStart;
+//        for(srcX=0;srcX<halfWidth;++srcX){
+//        cdst[dstCurr-1]=csrc[++srcCurr];
+//        cdst[dstCurr]=csrc[++srcCurr];
+//        dstCurr-=2;
+//        }
+//        yStart+=yStep;
+//        }
+//        }
+//        }
+//
+//        }

@@ -48,7 +48,7 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
     public CameraHelper(Activity activity) {
         this.activity = activity;
         this.cameraId = Camera.CameraInfo.CAMERA_FACING_BACK;             //默认启用后摄
-        this.focusMode = Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE; //默认持续对焦
+        this.focusMode = null;                                            //使用默认对焦模式（待研究）
         this.previewWidth = -1;
         this.previewHeight = -1;
         this.picWidth = -1;
@@ -89,10 +89,10 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
             setPreviewSize(parameters);
             //设置拍照后保存的图片的尺寸
             setPictureSize(parameters);
-            //设置摄像头 图像传感器的角度、方向
+            //设置摄像头预览旋转角
             setPreviewOrientation(parameters);
-            //设置对焦模式:持续对焦
-            parameters.setFocusMode(focusMode);
+            //设置对焦模式
+            setCameraFocusMode(parameters,focusMode);
             camera.setParameters(parameters);
             //数据缓存区,使用yuv数据格式计算大小
             cameraBuff = new byte[previewWidth * previewHeight * 3 / 2];
@@ -117,6 +117,21 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
             camera.stopPreview();
             camera.release();
             camera = null;
+        }
+    }
+
+    /**
+     * 设置相机对焦模式
+     * @param parameters
+     * @param mode
+     */
+    private void setCameraFocusMode(Camera.Parameters parameters,String mode){
+        //如果mode为null不设置对焦模式，这时它的默认对焦模式是什么待研究
+        if (mode != null){
+            List<String> supportedFocusModes = parameters.getSupportedFocusModes();
+            if (supportedFocusModes.contains(mode)){
+                parameters.setFocusMode(mode);
+            }
         }
     }
 
@@ -231,6 +246,8 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
                 }
                 break;
         }
+        Log.d(TAG, "屏幕旋转角： " + degrees);
+        Log.d(TAG, "相机旋转角： " + info.orientation);
         int result;
         //算法基本固定
         //如果是前摄
@@ -362,7 +379,11 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
     }
 
-
+    //重新开始预览
+    public void rePreview(){
+        stopPreview(); //先停止预览
+        startPreview();//再重新开始预览
+    }
 
     //////////////////////////////////////////SurfaceHolder.Callback////////////////////////////////
     //我们这里使用SurfaceView来进行预览，SurfaceHolder.Callback用于监听Surface的变化，我们实现这个接口以便做相应处理
@@ -384,8 +405,7 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
      */
     @Override
     public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
-        stopPreview(); //先停止预览
-        startPreview();//再重新开始预览
+        rePreview();
     }
 
     /**

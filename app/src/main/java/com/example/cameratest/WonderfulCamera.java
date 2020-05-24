@@ -206,7 +206,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
 
     private void initDefault(){
         this.cameraId = Camera.CameraInfo.CAMERA_FACING_BACK;             //默认启用后摄
-        this.focusMode = Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE; //默认持续对焦
+        this.focusMode = null;                                            //使用默认对焦模式
         this.previewWidth = -1;
         this.previewHeight = -1;
         this.picWidth = -1;
@@ -436,7 +436,22 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         cameraHelper.setCameraId(cameraId);
         cameraHelper.setExpectPreviewSize(previewWidth,previewHeight);
         cameraHelper.setExpectPicSize(picWidth,picHeight);
-        cameraHelper.setFocusMode(focusMode);
+
+        //如果用户没有设置对焦模式
+        if (focusMode == null){
+            //如果当前是拍照模式，则默认使用PICTURE对焦模式
+            //TODO 但是请注意CameraMode.PICTURE默认认为0是拍照，1是扫码，
+            //TODO 如果用户自定义了相机选择模式则应该自己根据需求设置对焦模式
+            if(currentMode == CameraMode.PICTURE){
+                cameraHelper.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+            }
+            //否则使用VIDEO对焦模式
+            else {
+                cameraHelper.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+            }
+        }else {
+            cameraHelper.setFocusMode(focusMode);
+        }
 
         cameraHelper.setCameraDataTransport(this);
     }
@@ -515,10 +530,15 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         snakeBar.setOnItemClickListener(new CustomSnakeBar.OnItemClickListener() {
             @Override
             public void onItemClick(View view, int position) {
+                int lastMode = currentMode;
                 setCurrentMode(position,false);
                 if (cameraEventListener != null){
                     TabView tabView = (TabView) view;
                     cameraEventListener.onModeSelect(view,position,tabView.getTopTitle());
+                }
+                //如果模式发生了改变则重新设置对焦模式并重新预览
+                if (lastMode != position){
+                    rePreviewCamera();
                 }
             }
         });
@@ -528,6 +548,21 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
 
         //默认选择位置
         setCurrentMode(0,true);
+    }
+
+    //重新设置对焦模式并重新预览
+    private void rePreviewCamera(){
+        if (focusMode == null){
+            if(currentMode == CameraMode.PICTURE){
+                cameraHelper.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+            }
+            else {
+                cameraHelper.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+            }
+        }else {
+            cameraHelper.setFocusMode(focusMode);
+        }
+        cameraHelper.rePreview();
     }
 
     //添加到窗口中
@@ -618,9 +653,15 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         return currentMode;
     }
 
-    //设置当前选中模式外界调用
+    //设置当前选中模式,外界调用
     public void setCurrentMode(int currentMode) {
+        int lastMode = this.currentMode;
+        //控制各控件的显示与隐藏
         setCurrentMode(currentMode,true);
+        //重新预览，因为不同的模式下对焦模式也不同
+        if(lastMode != currentMode){
+            rePreviewCamera();
+        }
     }
 
     //设置当前选中模式内部调用
@@ -766,6 +807,13 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         componentDepot.targetTypeView = tabView;
 
         return componentDepot;
+    }
+
+    /**
+     * 切换摄像头
+     */
+    public void switchCamera(){
+        cameraHelper.switchCamera();
     }
 
     public void setCameraDataFactory(CameraDataFactory cameraDataFactory) {
