@@ -73,6 +73,11 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
     //所以currentMode实际上代表的是选中的位置
     private int currentMode;
 
+    //拍照模式,默认为0
+    //0：高质量-使用takePicture api
+    //1：低质量-使用预览数据，这种模式下
+    private int picLevel;
+
     //导航按钮（snakeBar中间按钮）的间隔
     private int snakeHorizontalGap;
 
@@ -223,6 +228,8 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         snakePaddingBottom = 5;
 
         currentMode = 0;
+
+        picLevel = 0;
 
         snakeHorizontalGap = 50;
 
@@ -436,6 +443,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         cameraHelper.setCameraId(cameraId);
         cameraHelper.setExpectPreviewSize(previewWidth,previewHeight);
         cameraHelper.setExpectPicSize(picWidth,picHeight);
+        cameraHelper.setPicLevel(picLevel);
 
         //如果用户没有设置对焦模式
         if (focusMode == null){
@@ -809,6 +817,10 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         return componentDepot;
     }
 
+    public void setPicLevel(int picLevel) {
+        this.picLevel = picLevel;
+    }
+
     /**
      * 切换摄像头
      */
@@ -878,11 +890,11 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         switch (pictureType.type){
             //普通拍照
             case PicType.PIC_DEFAULT:
-                picBitmap = cameraDataFactory.picture(data);
+                picBitmap = cameraDataFactory.picture(bitmap,data);
                 break;
             //水印功能
             case PicType.PIC_WATER_MARK:
-                picBitmap = cameraDataFactory.picture(data);
+                picBitmap = cameraDataFactory.picture(bitmap,data);
                 picBitmap = cameraDataFactory.pictureWatermark(picBitmap,(String)pictureType.object);
                 break;
             default:

@@ -10,8 +10,8 @@ import android.graphics.Bitmap;
  */
 public interface CameraDataFactory{
 
-    //普通拍照功能，将原始数据转换成bitmap
-    public Bitmap picture(byte[] data);
+    //普通拍照功能，将原始数据转换成bitmap,如果已经转换了直接返回
+    public Bitmap picture(Bitmap bitmap,byte[] data);
 
     //水印加工
     public Bitmap pictureWatermark(Bitmap bitmap,String mark);

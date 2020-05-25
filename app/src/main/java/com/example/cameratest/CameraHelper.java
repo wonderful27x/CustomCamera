@@ -2,13 +2,18 @@ package com.example.cameratest;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
+import android.graphics.Rect;
+import android.graphics.YuvImage;
 import android.hardware.Camera;
+import android.os.Handler;
 import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 import android.view.SurfaceHolder;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
@@ -23,20 +28,28 @@ import java.util.List;
 public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callback {
 
     private static final String TAG = "CameraHelper";
-
-    private SurfaceHolder holder;//这是surfaceView提供的Holder
+    //这是surfaceView提供的Holder
+    private SurfaceHolder holder;
     private Activity activity;
     private Camera camera;
     private int cameraId;
+    //预览宽高
     private int previewWidth;
     private int previewHeight;
+    //拍照宽高
     private int picWidth;
     private int picHeight;
+    //聚焦模式
     private String focusMode;
+    //预览数据缓存
     private byte[] cameraBuff;
-    private byte[] cameraBuffRotate;
-    private int rotation;
-    private Bitmap picBitmap;//拍照转换的bitmap
+
+    //拍照模式,默认为0
+    //0：高质量-使用takePicture api
+    //1：低质量-使用预览数据，这种模式下
+    private int picLevel;
+    //拍照标志，使用预览数据
+    private boolean takingPicture;
 
     private SizeChangedListener sizeChangedListener;
     //相机预览回掉，提供给外界使用
@@ -53,6 +66,8 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
         this.previewHeight = -1;
         this.picWidth = -1;
         this.picHeight = -1;
+        this.picLevel = 0;
+        this.takingPicture = false;
     }
 
     public void setHolder(SurfaceHolder holder) {
@@ -90,13 +105,12 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
             //设置拍照后保存的图片的尺寸
             setPictureSize(parameters);
             //设置摄像头预览旋转角
-            setPreviewOrientation(parameters);
+            setPreviewOrientation();
             //设置对焦模式
             setCameraFocusMode(parameters,focusMode);
             camera.setParameters(parameters);
             //数据缓存区,使用yuv数据格式计算大小
             cameraBuff = new byte[previewWidth * previewHeight * 3 / 2];
-            cameraBuffRotate = new byte[picWidth * picHeight * 3 / 2];
             camera.addCallbackBuffer(cameraBuff);
             camera.setPreviewCallbackWithBuffer(this);
             //设置渲染点surfaceHolder
@@ -209,58 +223,79 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
     /**
      * 设置预览旋转角度，由于传感器的方向是固定的，与屏幕的坐标又不吻合，需要做一些角度的旋转
      * 使得图像显示正常
-     * @param parameters
      */
-    private void setPreviewOrientation(Camera.Parameters parameters) {
+    private void setPreviewOrientation() {
         Camera.CameraInfo info = new Camera.CameraInfo();
         Camera.getCameraInfo(cameraId, info);
-        rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
-        int degrees = 0;
+        int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
         switch (rotation) {
             case Surface.ROTATION_0:
-                degrees = 0;
                 //回掉
                 if (sizeChangedListener != null) {
                     sizeChangedListener.onChanged(previewHeight, previewWidth);
                 }
                 break;
             case Surface.ROTATION_90: // 横屏 左边是头部(home键在右边)
-                degrees = 90;
                 //回掉
                 if (sizeChangedListener != null) {
                     sizeChangedListener.onChanged(previewWidth, previewHeight);
                 }
                 break;
             case Surface.ROTATION_180:
-                degrees = 180;
                 //回掉
                 if (sizeChangedListener != null) {
                     sizeChangedListener.onChanged(previewHeight, previewWidth);
                 }
                 break;
             case Surface.ROTATION_270:// 横屏 头部在右边
-                degrees = 270;
                 //回掉
                 if (sizeChangedListener != null) {
                     sizeChangedListener.onChanged(previewWidth, previewHeight);
                 }
                 break;
         }
-        Log.d(TAG, "屏幕旋转角： " + degrees);
-        Log.d(TAG, "相机旋转角： " + info.orientation);
+
+        //需要考虑镜像,因为相机在预览的时候会做一个镜像的转换
+        float realRotation = getRealRotationAngle(rotation,info,true);
+        //设置预览旋转角
+        camera.setDisplayOrientation((int) realRotation);
+    }
+
+    //根据屏幕旋转角和相机旋转角，得到图片实际需要旋转的角度，mirror是否考虑了镜像
+    private float getRealRotationAngle(int screenRotation, Camera.CameraInfo cameraInfo,boolean mirror){
+        int screenDegree = 0;
+        switch (screenRotation) {
+            case Surface.ROTATION_0:
+                screenDegree = 0;
+                break;
+            case Surface.ROTATION_90: // 横屏 左边是头部(home键在右边)
+                screenDegree = 90;
+                break;
+            case Surface.ROTATION_180:
+                screenDegree = 180;
+                break;
+            case Surface.ROTATION_270:// 横屏 头部在右边
+                screenDegree = 270;
+                break;
+        }
+        Log.d(TAG, "屏幕旋转角： " + screenDegree);
+        Log.d(TAG, "相机旋转角： " + cameraInfo.orientation);
         int result;
         //算法基本固定
         //如果是前摄
-        if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-            result = (info.orientation + degrees) % 360;
-            result = (360 - result) % 360; // compensate the mirror
+        if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+            result = (cameraInfo.orientation + screenDegree) % 360;
+            //镜像补偿
+            if(mirror){
+                result = (360 - result) % 360;
+            }
         }
         //如果是后摄
-        else { // back-facing
-            result = (info.orientation - degrees + 360) % 360;
+        else {
+            result = (cameraInfo.orientation - screenDegree + 360) % 360;
         }
-        //设置预览旋转角
-        camera.setDisplayOrientation(result);
+        Log.d(TAG, "实际旋转角： " + result);
+        return result;
     }
 
     /**
@@ -271,112 +306,104 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
      * @param camera
      */
     @Override
-    public void onPreviewFrame(byte[] bytes, Camera camera) {
+    public void onPreviewFrame(final byte[] bytes, Camera camera) {
         if (previewCallback != null) {
             previewCallback.onPreviewFrame(bytes,camera);
         }
         //这句代码很重要，去掉后回调回中断
         camera.addCallbackBuffer(cameraBuff);
-    }
 
-    private void rotate90(byte[] data) {
-        int index = 0;
-        int ySize = picWidth * picHeight;
-        //u和v
-        int uvHeight = picWidth / 2;
-        //后置摄像头顺时针旋转90度
-        if (cameraId == Camera.CameraInfo.CAMERA_FACING_BACK) {
-            //将y的数据旋转之后 放入新的byte数组
-            for (int i = 0; i < picWidth; i++) {
-                for (int j = picHeight - 1; j >= 0; j--) {
-                    cameraBuffRotate[index++] = data[picWidth * j + i];
+        //如果是picLevel == 1使用预览数据作为拍照数据
+        if(picLevel == 1 && takingPicture){
+            takingPicture = false;
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    Handler handler = new Handler(activity.getMainLooper());
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Bitmap bitmap = transform(bytes,1);
+                            if (cameraDataTransport != null) {
+                                cameraDataTransport.picture(bitmap, bytes);
+                            }
+                        }
+                    });
                 }
-            }
-
-            //每次处理两个数据
-            for (int i = 0; i < picWidth; i += 2) {
-                for (int j = uvHeight - 1; j >= 0; j--) {
-                    // v
-                    cameraBuffRotate[index++] = data[ySize + picWidth * j + i];
-                    // u
-                    cameraBuffRotate[index++] = data[ySize + picWidth * j + i + 1];
-                }
-            }
-        } else {
-            //逆时针旋转90度
-            //            for (int i = 0; i < width; i++) {
-            //                for (int j = 0; j < height; j++) {
-            //                    cameraBuffRotate[index++] = data[width * j + width - 1 - i];
-            //                }
-            //            }
-            //            //  u v
-            //            for (int i = 0; i < width; i += 2) {
-            //                for (int j = 0; j < uvHeight; j++) {
-            //                    cameraBuffRotate[index++] = data[ySize + width * j + width - 1 - i - 1];
-            //                    cameraBuffRotate[index++] = data[ySize + width * j + width - 1 - i];
-            //                }
-            //            }
-
-            //旋转并镜像
-            for (int i = 0; i < picWidth; i++) {
-                for (int j = picHeight - 1; j >= 0; j--) {
-                    cameraBuffRotate[index++] = data[picWidth * j + picWidth - 1 - i];
-                }
-            }
-            //  u v
-            for (int i = 0; i < picWidth; i += 2) {
-                for (int j = uvHeight - 1; j >= 0; j--) {
-                    // v
-                    cameraBuffRotate[index++] = data[ySize + picWidth * j + picWidth - 1 - i - 1];
-                    // u
-                    cameraBuffRotate[index++] = data[ySize + picWidth * j + picWidth - 1 - i];
-                }
-            }
+            }).start();
         }
     }
-
 
     /**
      * 拍照
      */
     public void takePicture(){
-        //TODO 这个api的参数不太明白，待理解
-        camera.takePicture(null, null,new Camera.PictureCallback() {
-            @Override
-            public void onPictureTaken(byte[] data, Camera camera) {
-//                transform(data);
-                if (cameraDataTransport != null){
-                    cameraDataTransport.picture(null,data);
+        //如果picLevel == 0使用takePicture api拍照
+        if (picLevel == 0){
+            //TODO 这个api的参数不太明白，待理解
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    camera.takePicture(null, null,new Camera.PictureCallback() {
+                        @Override
+                        public void onPictureTaken(final byte[] data, Camera camera) {
+                            final Bitmap bitmap = transform(data,0);
+                            if (cameraDataTransport != null){
+                                Handler handler = new Handler(activity.getMainLooper());
+                                handler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        cameraDataTransport.picture(bitmap,data);
+                                    }
+                                });
+                            }
+                        }
+                    });
                 }
-            }
-        });
+            }).start();
+        }
+        //如果picLevel == 1，takingPicture置为true，在一帧预览数据到来时作为拍照数据
+        else if (picLevel == 1){
+            this.takingPicture = true;
+        }
     }
 
-    /**
-     * 旋转图像以获得正常的图像
-     */
-    private void transform(byte[] data){
-        //前摄旋转270度
-        if (cameraId == Camera.CameraInfo.CAMERA_FACING_FRONT){
-            rotate90(data);
+    //byte数据转成bitmap，旋转后
+    private Bitmap transform(byte[] data,int level){
+        Bitmap bitmap = null;
+        Camera.CameraInfo info = new Camera.CameraInfo();
+        Camera.getCameraInfo(cameraId, info);
+        //设备旋转角，手机和pad不一样
+        int displayRotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+        //计算得到需要旋转的角度,无需考虑镜像，因为data是没有做镜像转换的
+        float rotation = getRealRotationAngle(displayRotation,info,false);
+        //如果是takePicture api数据，这是图片格式（JPEG）
+        if (level == 0){
+            //转成bitmap
+            bitmap = bytToBitmap(data);
+            //旋转
+            bitmap = rotate(bitmap,rotation);
         }
-        //后摄旋转90度
+        //如果使用预览数据,这是YUV格式
         else {
-            rotate90(data);
+            //旋转并转成bitmap
+            //其实这里也可以先转成bitmap在旋转
+            if (rotation == 90){
+                byte[] transformData = rotateYUV420Degree90(data,previewWidth,previewHeight);
+                bitmap = nv21ToBitmap(transformData,previewHeight,previewWidth);
+            }else if(rotation == 180){
+                byte[] transformData = rotateYUV420Degree180(data,previewWidth,previewHeight);
+                bitmap = nv21ToBitmap(transformData,previewWidth,previewHeight);
+            }else if(rotation == 270){
+                byte[] transformData = rotateYUV420Degree270(data,previewWidth,previewHeight);
+                bitmap = nv21ToBitmap(transformData,previewHeight,previewWidth);
+            }
         }
-    }
-
-    //水平镜像翻转
-    private Bitmap mirror(Bitmap bitmap){
-        Matrix matrix = new Matrix();
-        matrix.postScale(-1f, 1f);
-        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-    }
-    //旋转
-    private Bitmap rotate(Bitmap bitmap, Float degree){
-        Matrix matrix = new Matrix();
-        matrix.postRotate(degree);
-        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+        //如果是前摄，还需要镜像翻转
+        if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT){
+            bitmap = mirror(bitmap);
+        }
+        return bitmap;
     }
 
     //重新开始预览
@@ -462,6 +489,14 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
         this.cameraId = cameraId;
     }
 
+    public int getPicLevel() {
+        return picLevel;
+    }
+
+    public void setPicLevel(int picLevel) {
+        this.picLevel = picLevel;
+    }
+
     /**
      * 设置预览尺寸
      * @param expectWidth
@@ -486,5 +521,127 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
 
     public void setCameraDataTransport(CameraDataTransport cameraDataTransport) {
         this.cameraDataTransport = cameraDataTransport;
+    }
+
+    //数组转bitmap，注意这里的数组data并不是yuv，而是图片格式（jpeg）
+    private Bitmap bytToBitmap(byte[] data){
+        return BitmapFactory.decodeByteArray(data,0,data.length);
+    }
+
+
+    /**
+     * 将bitmap转为数组
+     * @param bitmap 图片
+     * @return 返回数组
+     */
+    public byte[] bitmapToByte(Bitmap bitmap) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(bitmap.getByteCount());
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
+        return outputStream.toByteArray();
+    }
+
+    //水平镜像翻转
+    private Bitmap mirror(Bitmap bitmap){
+        Matrix matrix = new Matrix();
+        matrix.postScale(-1f, 1f);
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+    }
+
+    //旋转
+    private Bitmap rotate(Bitmap bitmap, float degree){
+        Matrix matrix = new Matrix();
+        matrix.postRotate(degree);
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+    }
+
+    //将nv21原始数据转成bitmap
+    private Bitmap nv21ToBitmap(byte[] nv21, int width, int height) {
+        Bitmap bitmap = null;
+        try {
+            YuvImage image = new YuvImage(nv21, ImageFormat.NV21, width, height, null);
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            image.compressToJpeg(new Rect(0, 0, width, height), 80, stream);
+            bitmap = BitmapFactory.decodeByteArray(stream.toByteArray(), 0, stream.size());
+            stream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return bitmap;
+    }
+
+    //旋转90度以得到正常显示图片
+    private byte[] rotateYUV420Degree90(byte[] data, int imageWidth, int imageHeight) {
+        byte[] yuv = new byte[imageWidth * imageHeight * 3 / 2];
+        int i = 0;
+        for (int x = 0; x < imageWidth; x++) {
+            for (int y = imageHeight - 1; y >= 0; y--) {
+                yuv[i] = data[y * imageWidth + x];
+                i++;
+            }
+        }
+        i = imageWidth * imageHeight * 3 / 2 - 1;
+        for (int x = imageWidth - 1; x > 0; x = x - 2) {
+            for (int y = 0; y < imageHeight / 2; y++) {
+                yuv[i] = data[(imageWidth * imageHeight) + (y * imageWidth) + x];
+                i--;
+                yuv[i] = data[(imageWidth * imageHeight) + (y * imageWidth)
+                        + (x - 1)];
+                i--;
+            }
+        }
+        return yuv;
+    }
+
+    //旋转180度以得到正常显示图片
+    private byte[] rotateYUV420Degree180(byte[] data, int imageWidth, int imageHeight) {
+        byte[] yuv = new byte[imageWidth * imageHeight * 3 / 2];
+        int i = 0;
+        int count = 0;
+        for (i = imageWidth * imageHeight - 1; i >= 0; i--) {
+            yuv[count] = data[i];
+            count++;
+        }
+        i = imageWidth * imageHeight * 3 / 2 - 1;
+        for (i = imageWidth * imageHeight * 3 / 2 - 1; i >= imageWidth
+                * imageHeight; i -= 2) {
+            yuv[count++] = data[i - 1];
+            yuv[count++] = data[i];
+        }
+        return yuv;
+    }
+
+    //旋转270度以得到正常显示图片
+    private byte[] rotateYUV420Degree270(byte[] data, int imageWidth,
+                                               int imageHeight) {
+        byte[] yuv = new byte[imageWidth * imageHeight * 3 / 2];
+        int nWidth = 0, nHeight = 0;
+        int wh = 0;
+        int uvHeight = 0;
+        if (imageWidth != nWidth || imageHeight != nHeight) {
+            nWidth = imageWidth;
+            nHeight = imageHeight;
+            wh = imageWidth * imageHeight;
+            uvHeight = imageHeight >> 1;// uvHeight = height / 2
+        }
+
+        int k = 0;
+        for (int i = 0; i < imageWidth; i++) {
+            int nPos = 0;
+            for (int j = 0; j < imageHeight; j++) {
+                yuv[k] = data[nPos + i];
+                k++;
+                nPos += imageWidth;
+            }
+        }
+        for (int i = 0; i < imageWidth; i += 2) {
+            int nPos = wh;
+            for (int j = 0; j < uvHeight; j++) {
+                yuv[k] = data[nPos + i];
+                yuv[k + 1] = data[nPos + i + 1];
+                k += 2;
+                nPos += imageWidth;
+            }
+        }
+        return rotateYUV420Degree180(rotateYUV420Degree90(data, imageWidth, imageHeight), imageWidth, imageHeight);
     }
 }
