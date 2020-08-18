@@ -1,4 +1,4 @@
-package com.example.cameratest;
+package com.example.cameratest.core;
 
 import android.graphics.Bitmap;
 import android.graphics.Point;
@@ -7,6 +7,8 @@ import android.hardware.Camera;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+
+import com.example.cameratest.annotation.ScanResultListener;
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.MultiFormatReader;
 import com.google.zxing.PlanarYUVLuminanceSource;

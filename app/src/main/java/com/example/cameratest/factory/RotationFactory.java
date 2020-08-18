@@ -1,8 +1,10 @@
-package com.example.cameratest;
+package com.example.cameratest.factory;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+
+import com.example.cameratest.annotation.CameraDataFactory;
 
 /**
  *  @Author wonderful
@@ -10,7 +12,7 @@ import android.graphics.Matrix;
  *  @Version 1.0
  *  @Description 旋转工厂
  */
-public class RotationFactory implements CameraDataFactory{
+public class RotationFactory implements CameraDataFactory {
 
     @Override
     public Bitmap working(Bitmap source, byte[] data) {

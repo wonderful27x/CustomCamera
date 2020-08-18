@@ -8,16 +8,21 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
-import android.hardware.Camera;
 import android.os.Bundle;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
+import com.example.cameratest.core.CameraHelper;
+import com.example.cameratest.core.CustomSnakeBar;
+import com.example.cameratest.core.TabView;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CameraActivity extends AppCompatActivity {
+/**
+ * 相机帮助类测试
+ */
+public class CameraHelperTestActivity extends AppCompatActivity {
 
     private CameraHelper cameraHelper;
     private SurfaceView surfaceView;
@@ -93,7 +98,7 @@ public class CameraActivity extends AppCompatActivity {
         snakeBar.setOnItemClickListener(new CustomSnakeBar.OnItemClickListener() {
             @Override
             public void onItemClick(View view, int position) {
-                Toast.makeText(CameraActivity.this,"click: " + position,Toast.LENGTH_SHORT).show();
+                Toast.makeText(CameraHelperTestActivity.this,"click: " + position,Toast.LENGTH_SHORT).show();
                 choosePosition = position;
                 if (choosePosition == 1){
                     rect.setVisibility(View.GONE);
@@ -108,14 +113,14 @@ public class CameraActivity extends AppCompatActivity {
         snakeBar.setLeftClickListener(new CustomSnakeBar.LeftClickListener() {
             @Override
             public void onLeftClick(View view) {
-                Toast.makeText(CameraActivity.this,"click: left",Toast.LENGTH_SHORT).show();
+                Toast.makeText(CameraHelperTestActivity.this,"click: left",Toast.LENGTH_SHORT).show();
             }
         });
 
         snakeBar.setRightClickListener(new CustomSnakeBar.RightClickListener() {
             @Override
             public void onRightClick(View view) {
-                Toast.makeText(CameraActivity.this,"click: right",Toast.LENGTH_SHORT).show();
+                Toast.makeText(CameraHelperTestActivity.this,"click: right",Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -147,7 +152,7 @@ public class CameraActivity extends AppCompatActivity {
             if (grantResults.length >0){
                 for (int result:grantResults){
                     if (result != PackageManager.PERMISSION_GRANTED){
-                        Toast.makeText(CameraActivity.this,"对不起，您拒绝了权限无法使用此功能！",Toast.LENGTH_SHORT).show();
+                        Toast.makeText(CameraHelperTestActivity.this,"对不起，您拒绝了权限无法使用此功能！",Toast.LENGTH_SHORT).show();
                         return;
                     }
                 }
@@ -155,7 +160,7 @@ public class CameraActivity extends AppCompatActivity {
                 cameraHelper.setHolder(surfaceView.getHolder());
 //                cameraHelper.startPreview();
             }else {
-                Toast.makeText(CameraActivity.this,"发生未知错误！", Toast.LENGTH_SHORT).show();
+                Toast.makeText(CameraHelperTestActivity.this,"发生未知错误！", Toast.LENGTH_SHORT).show();
             }
         }
     }

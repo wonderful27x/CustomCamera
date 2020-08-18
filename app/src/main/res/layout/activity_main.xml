@@ -9,9 +9,9 @@
     android:background="@color/royalblue"
     android:orientation="vertical"
     android:padding="5dp"
-    tools:context=".MainActivity">
+    tools:context=".TabViewTestActivity">
 
-<!--    <com.example.cameratest.TabView-->
+<!--    <com.example.cameratest.core.TabView-->
 <!--        android:id="@+id/text"-->
 <!--        android:layout_width="80dp"-->
 <!--        android:layout_height="80dp"-->

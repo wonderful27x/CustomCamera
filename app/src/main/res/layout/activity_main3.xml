@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    tools:context=".MainActivity">
+
+    <Button
+        android:id="@+id/tabView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="TabView 测试"/>
+
+    <Button
+        android:id="@+id/customSnakeBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="CustomSnakeBar 测试"/>
+
+    <Button
+        android:id="@+id/cameraHelper"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="CameraHelper 测试"/>
+
+    <Button
+        android:id="@+id/wonderfulCamera"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="自定义相机测试"/>
+
+</LinearLayout>

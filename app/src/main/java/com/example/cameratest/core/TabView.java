@@ -1,4 +1,4 @@
-package com.example.cameratest;
+package com.example.cameratest.core;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -15,6 +15,8 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import androidx.annotation.RequiresApi;
+
+import com.example.cameratest.R;
 
 /**
  *  @Author wonderful

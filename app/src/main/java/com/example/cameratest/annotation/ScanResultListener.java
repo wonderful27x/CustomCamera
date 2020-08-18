@@ -1,4 +1,4 @@
-package com.example.cameratest;
+package com.example.cameratest.annotation;
 
 import com.google.zxing.Result;
 

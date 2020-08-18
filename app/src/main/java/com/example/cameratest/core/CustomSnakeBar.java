@@ -1,4 +1,4 @@
-package com.example.cameratest;
+package com.example.cameratest.core;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -11,6 +11,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import androidx.annotation.Nullable;
+
+import com.example.cameratest.R;
+
 import java.util.List;
 
 /**
@@ -87,7 +90,7 @@ public class CustomSnakeBar<T> extends LinearLayout {
 
     private void init(Context context, AttributeSet attrs){
         this.context = context;
-        TypedArray typedArray = context.obtainStyledAttributes(attrs,R.styleable.wonderfulSnakeStyle);
+        TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.wonderfulSnakeStyle);
         enableLeftButton = typedArray.getBoolean(R.styleable.wonderfulSnakeStyle_enableLeftButton,false);
         enableRightButton = typedArray.getBoolean(R.styleable.wonderfulSnakeStyle_enableRightButton,false);
         gapHorizontal = typedArray.getDimensionPixelSize(R.styleable.wonderfulSnakeStyle_gapHorizontal,-1);

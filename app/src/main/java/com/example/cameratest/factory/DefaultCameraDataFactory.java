@@ -1,7 +1,9 @@
-package com.example.cameratest;
+package com.example.cameratest.factory;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+
+import com.example.cameratest.annotation.CameraDataFactory;
 
 /**
  *  @Author wonderful
@@ -9,7 +11,7 @@ import android.graphics.BitmapFactory;
  *  @Version 1.0
  *  @Description 默认的相机数据加工厂
  */
-public class DefaultCameraDataFactory implements CameraDataFactory{
+public class DefaultCameraDataFactory implements CameraDataFactory {
 
     @Override
     public Bitmap working(Bitmap bitmap, byte[] data) {

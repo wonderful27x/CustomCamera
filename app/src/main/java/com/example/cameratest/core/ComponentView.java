@@ -1,4 +1,4 @@
-package com.example.cameratest;
+package com.example.cameratest.core;
 
 import android.view.View;
 

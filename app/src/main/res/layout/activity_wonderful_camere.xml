@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".WonderfulCameraActivity">
 
-    <com.example.cameratest.WonderfulCamera
+    <com.example.cameratest.core.WonderfulCamera
         android:id="@+id/cameraView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>

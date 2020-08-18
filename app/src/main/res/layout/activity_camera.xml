@@ -5,14 +5,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="center"
-    tools:context=".CameraActivity">
+    tools:context=".CameraHelperTestActivity">
 
     <SurfaceView
         android:id="@+id/surfaceView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
-    <com.example.cameratest.TabView
+    <com.example.cameratest.core.TabView
         android:id="@+id/back"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -28,7 +28,7 @@
         app:responseMode="1"
         android:visibility="visible"/>
 
-    <com.example.cameratest.TabView
+    <com.example.cameratest.core.TabView
         android:id="@+id/album"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -50,7 +50,7 @@
         android:layout_centerInParent="true"
         android:background="@drawable/load_image2"/>
 
-    <com.example.cameratest.CustomSnakeBar
+    <com.example.cameratest.core.CustomSnakeBar
         android:id="@+id/snake"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -62,7 +62,7 @@
         app:gapHorizontal="10dp"/>
 
 
-        <com.example.cameratest.TabView
+        <com.example.cameratest.core.TabView
             android:id="@+id/takePic"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

@@ -1,7 +1,6 @@
 package com.example.cameratest;
 
 import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -9,7 +8,10 @@ import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-public class PictureActivity extends AppCompatActivity {
+/**
+ * 拍照/扫码结果显示Activity
+ */
+public class PictureResultActivity extends AppCompatActivity {
 
     public static Bitmap bitmap;
     public static byte[] bitmapArray;

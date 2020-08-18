@@ -1,4 +1,4 @@
-package com.example.cameratest;
+package com.example.cameratest.core;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
@@ -13,6 +13,9 @@ import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 import android.view.SurfaceHolder;
+
+import com.example.cameratest.annotation.CameraDataTransport;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Iterator;

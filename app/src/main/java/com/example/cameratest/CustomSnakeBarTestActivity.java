@@ -1,24 +1,20 @@
 package com.example.cameratest;
 
 import androidx.appcompat.app.AppCompatActivity;
-
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.view.Gravity;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
-
+import com.example.cameratest.core.CustomSnakeBar;
+import com.example.cameratest.core.TabView;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * CustomSnakeBar的测试与使用范例
  */
-public class Main2Activity extends AppCompatActivity {
+public class CustomSnakeBarTestActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,21 +46,21 @@ public class Main2Activity extends AppCompatActivity {
         snakeBar.setOnItemClickListener(new CustomSnakeBar.OnItemClickListener() {
             @Override
             public void onItemClick(View view, int position) {
-                Toast.makeText(Main2Activity.this,"click: " + position,Toast.LENGTH_SHORT).show();
+                Toast.makeText(CustomSnakeBarTestActivity.this,"click: " + position,Toast.LENGTH_SHORT).show();
             }
         });
 
         snakeBar.setLeftClickListener(new CustomSnakeBar.LeftClickListener() {
             @Override
             public void onLeftClick(View view) {
-                Toast.makeText(Main2Activity.this,"click: left",Toast.LENGTH_SHORT).show();
+                Toast.makeText(CustomSnakeBarTestActivity.this,"click: left",Toast.LENGTH_SHORT).show();
             }
         });
 
         snakeBar.setRightClickListener(new CustomSnakeBar.RightClickListener() {
             @Override
             public void onRightClick(View view) {
-                Toast.makeText(Main2Activity.this,"click: right",Toast.LENGTH_SHORT).show();
+                Toast.makeText(CustomSnakeBarTestActivity.this,"click: right",Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -98,21 +94,21 @@ public class Main2Activity extends AppCompatActivity {
         snakeBar.setOnItemClickListener(new CustomSnakeBar.OnItemClickListener() {
             @Override
             public void onItemClick(View view, int position) {
-                Toast.makeText(Main2Activity.this,"click: " + position,Toast.LENGTH_SHORT).show();
+                Toast.makeText(CustomSnakeBarTestActivity.this,"click: " + position,Toast.LENGTH_SHORT).show();
             }
         });
 
         snakeBar.setLeftClickListener(new CustomSnakeBar.LeftClickListener() {
             @Override
             public void onLeftClick(View view) {
-                Toast.makeText(Main2Activity.this,"click: left",Toast.LENGTH_SHORT).show();
+                Toast.makeText(CustomSnakeBarTestActivity.this,"click: left",Toast.LENGTH_SHORT).show();
             }
         });
 
         snakeBar.setRightClickListener(new CustomSnakeBar.RightClickListener() {
             @Override
             public void onRightClick(View view) {
-                Toast.makeText(Main2Activity.this,"click: right",Toast.LENGTH_SHORT).show();
+                Toast.makeText(CustomSnakeBarTestActivity.this,"click: right",Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -154,21 +150,21 @@ public class Main2Activity extends AppCompatActivity {
         snakeBar.setOnItemClickListener(new CustomSnakeBar.OnItemClickListener() {
             @Override
             public void onItemClick(View view, int position) {
-                Toast.makeText(Main2Activity.this,"click: " + position,Toast.LENGTH_SHORT).show();
+                Toast.makeText(CustomSnakeBarTestActivity.this,"click: " + position,Toast.LENGTH_SHORT).show();
             }
         });
 
         snakeBar.setLeftClickListener(new CustomSnakeBar.LeftClickListener() {
             @Override
             public void onLeftClick(View view) {
-                Toast.makeText(Main2Activity.this,"click: left",Toast.LENGTH_SHORT).show();
+                Toast.makeText(CustomSnakeBarTestActivity.this,"click: left",Toast.LENGTH_SHORT).show();
             }
         });
 
         snakeBar.setRightClickListener(new CustomSnakeBar.RightClickListener() {
             @Override
             public void onRightClick(View view) {
-                Toast.makeText(Main2Activity.this,"click: right",Toast.LENGTH_SHORT).show();
+                Toast.makeText(CustomSnakeBarTestActivity.this,"click: right",Toast.LENGTH_SHORT).show();
             }
         });
     }

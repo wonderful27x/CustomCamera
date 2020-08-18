@@ -1,16 +1,16 @@
-package com.example.cameratest;
+package com.example.cameratest.annotation;
 
 /**
  *  @Author wonderful
- *  @Date 2020-5-23
+ *  @Date 2020-8-18
  *  @Version 1.0
  *  @Description 相机模式枚举器
  */
 public enum CameraMode {
 
-    PICTURE(Keys.PICTURE,0),        //拍照
-    SCAN(Keys.SCAN,1),              //扫码
-    RECOGNIZE(Keys.RECOGNIZE,2);    //识别
+    PICTURE("picture",0),        //拍照
+    SCAN("scan",1),              //扫码
+    RECOGNIZE("recognize",2);    //识别
 
     private String mode;
     private int code;

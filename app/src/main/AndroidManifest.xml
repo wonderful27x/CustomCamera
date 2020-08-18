@@ -3,7 +3,6 @@
     package="com.example.cameratest">
 
     <uses-permission android:name="android.permission.CAMERA" />
-
     <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
@@ -13,9 +12,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".WonderfulCameraActivity"></activity>
-        <activity android:name=".CameraActivity" />
-        <activity android:name=".Main2Activity" />
+        <activity android:name=".ControlCameraActivity"></activity>
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -23,7 +20,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".PictureActivity" />
+        <activity android:name=".WonderfulCameraActivity" />
+        <activity android:name=".CameraHelperTestActivity" />
+        <activity android:name=".CustomSnakeBarTestActivity" />
+        <activity android:name=".TabViewTestActivity" />
+        <activity android:name=".PictureResultActivity" />
     </application>
 
 </manifest>
