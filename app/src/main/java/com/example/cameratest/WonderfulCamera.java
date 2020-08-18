@@ -2,6 +2,7 @@ package com.example.cameratest;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Entity;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -9,7 +10,6 @@ import android.graphics.Point;
 import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
 import android.util.AttributeSet;
-import android.util.Size;
 import android.view.Display;
 import android.view.SurfaceView;
 import android.view.View;
@@ -18,14 +18,17 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  *  @Author wonderful
  *  @Date 2020-5-21
  *  @Version 1.0
  *  @Description 自定义相机
- *  TODO 初始版本，性能有待提升,多线程，拦截器
+ *  TODO 初始版本，性能有待提升,多线程，拦截器,UI和业务逻辑应该解藕
  */
 public class WonderfulCamera extends RelativeLayout implements CameraDataTransport{
 
@@ -34,11 +37,9 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
     //相机预览surfaceView
     private SurfaceView surfaceView;
     //固定的相机元件仓库集合，每个item代表相机的一个功能，如拍照、扫码
-    //TODO 有缺陷，当使用自定义view的时候就不好修改，应该使用hashMap
-    private List<ComponentDepot> componentDepots;
-    //TODO 有缺陷，当使用自定义view的时候就不好修改，应该使用hashMap
+    private LinkedHashMap<String,ComponentDepot> componentDepots;
     //用户自定义的View，如果固定的相机元素不能满足需求用户可添加自己的View，这个view的位置由用户通过坐标指定
-    private List<ComponentView> coordinateViews;
+    private LinkedHashMap<String,ComponentView> coordinateViews;
     //相机选择导航按钮，用于切换相机功能，如拍照、扫码
     private CustomSnakeBar<View> snakeBar;
 
@@ -77,9 +78,8 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
     //控件大小回调标志，默认只要发生改变就回调
     //用户可手动截断
     public boolean keepValueSize = true;
-    //当前选中的模式，如拍照或扫码，由于相机选择导航按钮可定制，
-    //所以currentMode实际上代表的是选中的位置
-    private int currentMode;
+    //当前选中的模式，如拍照或扫码
+    private CameraMode currentMode;
 
     //拍照模式,默认为0
     //0：高质量-使用takePicture api
@@ -169,7 +169,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
 
         //布局固定控件
         if (componentDepots != null){
-            for (ComponentDepot depot:componentDepots){
+            for (ComponentDepot depot:componentDepots.values()){
                 int centerX = width / 2;
                 int centerY = height / 2;
                 //centerShape
@@ -202,7 +202,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
 
         //用户自定义控件
         if(coordinateViews != null){
-            for (ComponentView view:coordinateViews){
+            for (ComponentView view:coordinateViews.values()){
                 view.view.layout(view.x,view.y,view.x + view.view.getMeasuredWidth(),view.y + view.view.getMeasuredHeight());
             }
         }
@@ -237,7 +237,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         snakePaddingRight = 5;
         snakePaddingBottom = 5;
 
-        currentMode = 0;
+        currentMode = CameraMode.PICTURE;
 
         picLevel = 0;
 
@@ -250,7 +250,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         cameraDataFactory = new ArrayList<>();
 
         //固定控件
-        componentDepots = new ArrayList<>();
+        componentDepots = new LinkedHashMap<>();
         //拍照
         ComponentDepot componentPic = new ComponentDepot();
         //centerShape
@@ -279,7 +279,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
                 TabView view = (TabView) v;
                 view.setChecked(!view.isChecked());
                 if(cameraEventListener != null){
-                    TabView targetView = (TabView) componentDepots.get(currentMode).targetTypeView.view;
+                    TabView targetView = (TabView) componentDepots.get(Keys.PICTURE).targetTypeView.view;
                     cameraEventListener.centerOnClick(currentMode,view.getTopTitle(),targetView.getTopTitle());
                 }
             }
@@ -298,7 +298,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
             public void onClick(View v) {
                 TabView view = (TabView) v;
                 if(cameraEventListener != null){
-                    TabView targetView = (TabView) componentDepots.get(currentMode).targetTypeView.view;
+                    TabView targetView = (TabView) componentDepots.get(Keys.PICTURE).targetTypeView.view;
                     cameraEventListener.bottomOnClick(currentMode,view.getTopTitle(),targetView.getTopTitle());
                 }
             }
@@ -322,13 +322,6 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         //扫码
         ComponentDepot componentScanCode = new ComponentDepot();
         //centerShape
-//        tabView = new TabView(context);
-//        params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-//        tabView.setLayoutParams(params);
-//        tabView.setTopDrawable(getDrawableFromSource(R.drawable.xj_photo_up));
-//        tabView.setBottomDrawable(getDrawableFromSource(R.drawable.xj_photo_up));
-//        tabView.init();
-
         ImageView imageView = new ImageView(context);
         params = new RelativeLayout.LayoutParams(500, 500);
         imageView.setLayoutParams(params);
@@ -352,7 +345,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
                 TabView view = (TabView) v;
                 view.setChecked(!view.isChecked());
                 if(cameraEventListener != null){
-                    TabView targetView = (TabView) componentDepots.get(currentMode).targetTypeView.view;
+                    TabView targetView = (TabView) componentDepots.get(Keys.SCAN).targetTypeView.view;
                     cameraEventListener.centerOnClick(currentMode,view.getTopTitle(),targetView.getTopTitle());
                 }
             }
@@ -371,7 +364,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
             public void onClick(View v) {
                 TabView view = (TabView) v;
                 if(cameraEventListener != null){
-                    TabView targetView = (TabView) componentDepots.get(currentMode).targetTypeView.view;
+                    TabView targetView = (TabView) componentDepots.get(Keys.SCAN).targetTypeView.view;
                     cameraEventListener.bottomOnClick(currentMode,view.getTopTitle(),targetView.getTopTitle());
                 }
             }
@@ -391,11 +384,11 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         tabView.init();
         componentScanCode.targetTypeView = createComponentView(-1,-1,ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT,tabView);
 
-        componentDepots.add(componentPic);
-        componentDepots.add(componentScanCode);
+        componentDepots.put(Keys.PICTURE,componentPic);
+        componentDepots.put(Keys.SCAN,componentScanCode);
 
         //用户自定义控件
-        coordinateViews = new ArrayList<>();
+        coordinateViews = new LinkedHashMap<>();
         //返回按钮
 
         tabView = new TabView(context);
@@ -419,15 +412,15 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         tabView.init();
         rightDefault = createComponentView(-1,-1,ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT,tabView);
 
-        coordinateViews.add(leftDefault);
-        coordinateViews.add(rightDefault);
+        coordinateViews.put(Keys.LEFT_BTN,leftDefault);
+        coordinateViews.put(Keys.RIGHT_BTN,rightDefault);
     }
 
-    public void setComponentDepots(List<ComponentDepot> componentDepots) {
+    public void setComponentDepots(LinkedHashMap<String,ComponentDepot> componentDepots) {
         this.componentDepots = componentDepots;
     }
 
-    public void setCoordinateViews(List<ComponentView> coordinateViews) {
+    public void setCoordinateViews(LinkedHashMap<String,ComponentView> coordinateViews) {
         this.coordinateViews = coordinateViews;
     }
 
@@ -494,7 +487,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         //设置snakeBar的中间按钮
         List<View> views = new ArrayList<>();
         if (componentDepots != null){
-            for (ComponentDepot depot:componentDepots){
+            for (ComponentDepot depot:componentDepots.values()){
                 views.add(depot.targetTypeView.view);
             }
         }
@@ -550,14 +543,16 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         snakeBar.setOnItemClickListener(new CustomSnakeBar.OnItemClickListener() {
             @Override
             public void onItemClick(View view, int position) {
-                int lastMode = currentMode;
-                setCurrentMode(position,false);
+                CameraMode lastMode = currentMode;
+                String key = getKeyFromPosition(position);
+                CameraMode mode = CameraMode.cameraMode(key);
+                setCurrentMode(mode,false);
                 if (cameraEventListener != null){
                     TabView tabView = (TabView) view;
-                    cameraEventListener.onModeSelect(view,position,tabView.getTopTitle());
+                    cameraEventListener.onModeSelect(view,mode,tabView.getTopTitle());
                 }
                 //如果模式发生了改变则重新设置对焦模式并重新预览
-                if (lastMode != position){
+                if (lastMode != mode){
                     rePreviewCamera();
                 }
             }
@@ -567,7 +562,28 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         snakeBar.init();
 
         //默认选择位置
-        setCurrentMode(0,true);
+        setCurrentMode(CameraMode.PICTURE,true);
+    }
+
+    //通过位置position，从LinkedHashMap中获取key
+    private String getKeyFromPosition(int position){
+        List<Map.Entry<String, ComponentDepot>> entityList = new ArrayList<>(componentDepots.entrySet());
+        Map.Entry<String, ComponentDepot> entry = entityList.get(position);
+        if (entry != null){
+            return entry.getKey();
+        }
+        return null;
+    }
+
+    //通过key，从LinkedHashMap中获取位置position
+    private int getPositionFromKey(String key){
+        List<Map.Entry<String, ComponentDepot>> entityList = new ArrayList<>(componentDepots.entrySet());
+        for (int i=0; i<entityList.size(); i++){
+            if (key.equals(entityList.get(i).getKey())){
+                return i;
+            }
+        }
+        return -1;
     }
 
     //重新设置对焦模式并重新预览
@@ -591,12 +607,16 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
     private void initScan(){
         if (currentMode == CameraMode.SCAN){
             //TODO 有bug，后期使用map
-            Point scan = getComponentSize(componentDepots.get(1).centerShape);
+            Point scan = getComponentSize(componentDepots.get(Keys.SCAN).centerShape);
             Point preview = new Point(cameraHelper.getPreviewWidth(),cameraHelper.getPreviewHeight());
             Point screen = getScreenSize();
             scanManager = new ScanManager(scan,preview,screen);
             scanManager.setScanResultListener(scanResultListener);
             cameraHelper.setPreviewCallback(scanManager);
+        }else {
+            if (scanManager != null){
+                scanManager.release();
+            }
         }
     }
 
@@ -610,7 +630,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         this.addView(snakeBar);
         //添加固定元素
         if (componentDepots != null){
-            for (ComponentDepot depot:componentDepots){
+            for (ComponentDepot depot:componentDepots.values()){
                 this.addView(depot.centerShape.view);
                 this.addView(depot.centerButton.view);
                 this.addView(depot.bottomButton.view);
@@ -618,7 +638,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         }
         //添加用户自定view
         if (coordinateViews != null){
-            for (ComponentView view:coordinateViews){
+            for (ComponentView view:coordinateViews.values()){
                 this.addView(view.view);
             }
         }
@@ -684,13 +704,13 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         return getResources().getDrawable(sourceId);
     }
 
-    public int getCurrentMode() {
+    public CameraMode getCurrentMode() {
         return currentMode;
     }
 
     //设置当前选中模式,外界调用
-    public void setCurrentMode(int currentMode) {
-        int lastMode = this.currentMode;
+    public void setCurrentMode(CameraMode currentMode) {
+        CameraMode lastMode = this.currentMode;
         //控制各控件的显示与隐藏
         setCurrentMode(currentMode,true);
         //重新预览，因为不同的模式下对焦模式也不同
@@ -700,27 +720,30 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
     }
 
     //设置当前选中模式内部调用
-    private void setCurrentMode(int currentMode,boolean snake) {
+    private void setCurrentMode(CameraMode currentMode,boolean snake) {
         this.currentMode = currentMode;
         if (componentDepots != null){
-            for (int i=0; i<componentDepots.size(); i++){
+            for (Map.Entry<String,ComponentDepot> entry:componentDepots.entrySet()){
                 //先隐藏非选中控件
-                if (currentMode != i){
-                    componentDepots.get(i).centerShape.view.setVisibility(INVISIBLE);
-                    componentDepots.get(i).centerButton.view.setVisibility(INVISIBLE);
-                    componentDepots.get(i).bottomButton.view.setVisibility(INVISIBLE);
+                if (!entry.getKey().equals(currentMode.getMode())){
+                    entry.getValue().centerShape.view.setVisibility(INVISIBLE);
+                    entry.getValue().centerButton.view.setVisibility(INVISIBLE);
+                    entry.getValue().bottomButton.view.setVisibility(INVISIBLE);
                 }
                 //显示选中控件
                 else {
-                    componentDepots.get(i).centerShape.view.setVisibility(VISIBLE);
-                    componentDepots.get(i).centerButton.view.setVisibility(VISIBLE);
-                    componentDepots.get(i).bottomButton.view.setVisibility(VISIBLE);
+                    entry.getValue().centerShape.view.setVisibility(VISIBLE);
+                    entry.getValue().centerButton.view.setVisibility(VISIBLE);
+                    entry.getValue().bottomButton.view.setVisibility(VISIBLE);
                 }
             }
         }
         //设置snakeBar的选中项
         if (snake){
-            snakeBar.setChoosePosition(currentMode);
+            int position = getPositionFromKey(currentMode.getMode());
+            if (position != -1){
+                snakeBar.setChoosePosition(position);
+            }
         }
     }
 
@@ -759,7 +782,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
      * 可以修改、增加、删除元件来达到自己的目的
      * @return
      */
-    public List<ComponentDepot> forceRequestComponentDepot(){
+    public Map<String,ComponentDepot> forceRequestComponentDepot(){
         return componentDepots;
     }
 
@@ -767,7 +790,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
      * 如果通过修改增加默认属性仍然无法满足需求，调用此方法强制返回一个自定义View集合
      * @return
      */
-    public List<ComponentView> forceRequestCoordinateView(){
+    public Map<String,ComponentView> forceRequestCoordinateView(){
         return coordinateViews;
     }
 
@@ -808,7 +831,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
                 view.setChecked(!view.isChecked());
                 view.setChecked(!view.isChecked());
                 if(cameraEventListener != null){
-                    TabView targetView = (TabView) componentDepots.get(currentMode).targetTypeView.view;
+                    TabView targetView = (TabView) componentDepots.get(currentMode.getMode()).targetTypeView.view;
                     cameraEventListener.centerOnClick(currentMode,view.getTopTitle(),targetView.getTopTitle());
                 }
             }
@@ -824,7 +847,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
             public void onClick(View v) {
                 TabView view = (TabView) v;
                 if(cameraEventListener != null){
-                    TabView targetView = (TabView) componentDepots.get(currentMode).targetTypeView.view;
+                    TabView targetView = (TabView) componentDepots.get(currentMode.getMode()).targetTypeView.view;
                     cameraEventListener.bottomOnClick(currentMode,view.getTopTitle(),targetView.getTopTitle());
                 }
             }
@@ -919,11 +942,11 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
     //相机事件监听，注意这里包括三个事件，1：相机模式选择，2：当前模式下的中间按钮点击事件，3：当前模式下底部按钮点击事件
     public interface CameraEventListener{
         //1 -> view:选中的View，position：选中的位置，代表了相机的模式，message：选中模式的字符串描述，和按钮的名字一致
-        public void onModeSelect(View view, int currentMode,String message);
+        public void onModeSelect(View view, CameraMode currentMode,String message);
         //2 -> position：当前选中的位置，代表了相机的模式，buttonName:当前按钮名字，message：选中模式的字符串描述
-        public void centerOnClick(int currentMode,String buttonName,String message);
+        public void centerOnClick(CameraMode currentMode,String buttonName,String message);
         //3 -> position：当前选中的位置，代表了相机的模式，buttonName:当前按钮名字，message：选中模式的字符串描述
-        public void bottomOnClick(int currentMode,String buttonName,String message);
+        public void bottomOnClick(CameraMode currentMode,String buttonName,String message);
     }
 
     //拍照数据运输接口，当拍照成功后会将拍照数据运输到这里

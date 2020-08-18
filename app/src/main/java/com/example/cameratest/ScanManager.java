@@ -67,6 +67,7 @@ public class ScanManager implements Camera.PreviewCallback {
     public void onPreviewFrame(final byte[] data, Camera camera) {
         if (state == READY){
             state = DECODING;
+            if (executorService == null) return;
             executorService.execute(new Runnable() {
                 @Override
                 public void run() {
@@ -231,6 +232,9 @@ public class ScanManager implements Camera.PreviewCallback {
         //handler
         handler = null;
         //线程池
-        executorService.shutdownNow();
+        if(executorService != null){
+            executorService.shutdownNow();
+            executorService = null;
+        }
     }
 }

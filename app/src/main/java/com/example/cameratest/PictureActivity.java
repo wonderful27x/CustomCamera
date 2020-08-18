@@ -69,5 +69,6 @@ public class PictureActivity extends AppCompatActivity {
             bitmap.recycle();
             bitmap = null;
         }
+        bitmapArray = null;
     }
 }

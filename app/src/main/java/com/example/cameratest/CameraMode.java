@@ -1,21 +1,39 @@
 package com.example.cameratest;
 
-import androidx.annotation.IntDef;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
 /**
- * 相机模式，如拍照或扫码
+ *  @Author wonderful
+ *  @Date 2020-5-23
+ *  @Version 1.0
+ *  @Description 相机模式枚举器
  */
-@IntDef({
-        CameraMode.PICTURE,
-        CameraMode.SCAN
-})
-@Target(ElementType.FIELD)
-@Retention(RetentionPolicy.SOURCE)
-public @interface CameraMode {
-    int PICTURE = 0;  //拍照
-    int SCAN = 1;     //扫码
+public enum CameraMode {
+
+    PICTURE(Keys.PICTURE,0),        //拍照
+    SCAN(Keys.SCAN,1),              //扫码
+    RECOGNIZE(Keys.RECOGNIZE,2);    //识别
+
+    private String mode;
+    private int code;
+
+    CameraMode(String mode, int code) {
+        this.mode = mode;
+        this.code = code;
+    }
+
+    public String getMode() {
+        return mode;
+    }
+
+    public int getCode() {
+        return code;
+    }
+
+    public static CameraMode cameraMode(String mode){
+        for (CameraMode mode1:values()){
+            if (mode1.getMode().equals(mode)){
+                return mode1;
+            }
+        }
+        return null;
+    }
 }
