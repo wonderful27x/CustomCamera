@@ -9,17 +9,18 @@ import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 import android.view.SurfaceHolder;
-
 import com.example.cameratest.annotation.CameraDataTransport;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * 相机帮助类，主要用于摄像头数据的获取和预览
@@ -61,6 +62,11 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
     //相机数据运输接口，如拍照后将数据运输到外界
     private CameraDataTransport cameraDataTransport;
 
+    //线程池
+    private ExecutorService executorService;
+    //Handler
+    private Handler handler;
+
     public CameraHelper(Activity activity) {
         this.activity = activity;
         this.cameraId = Camera.CameraInfo.CAMERA_FACING_BACK;             //默认启用后摄
@@ -71,6 +77,8 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
         this.picHeight = -1;
         this.picLevel = 0;
         this.takingPicture = false;
+        executorService = Executors.newSingleThreadExecutor();
+        handler = new Handler(Looper.getMainLooper());
     }
 
     public void setHolder(SurfaceHolder holder) {
@@ -147,6 +155,11 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
         sizeChangedListener = null;
         previewCallback = null;
         cameraDataTransport = null;
+        handler = null;
+        if(executorService != null){
+            executorService.shutdownNow();
+            executorService = null;
+        }
     }
 
     /**
@@ -331,21 +344,22 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
         //如果是picLevel == 1使用预览数据作为拍照数据
         if(picLevel == 1 && takingPicture){
             takingPicture = false;
-            new Thread(new Runnable() {
+            if (executorService == null)return;
+            executorService.execute(new Runnable() {
                 @Override
                 public void run() {
-                    Handler handler = new Handler(activity.getMainLooper());
+                    final Bitmap bitmap = transform(bytes,1);
+                    if (handler == null)return;
                     handler.post(new Runnable() {
                         @Override
                         public void run() {
-                            Bitmap bitmap = transform(bytes,1);
                             if (cameraDataTransport != null) {
                                 cameraDataTransport.picture(bitmap, bytes);
                             }
                         }
                     });
                 }
-            }).start();
+            });
         }
     }
 
@@ -356,26 +370,27 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
         //如果picLevel == 0使用takePicture api拍照
         if (picLevel == 0){
             //TODO 这个api的参数不太明白，待理解
-            new Thread(new Runnable() {
+            if (executorService == null)return;
+            executorService.execute(new Runnable() {
                 @Override
                 public void run() {
                     camera.takePicture(null, null,new Camera.PictureCallback() {
                         @Override
                         public void onPictureTaken(final byte[] data, Camera camera) {
                             final Bitmap bitmap = transform(data,0);
-                            if (cameraDataTransport != null){
-                                Handler handler = new Handler(activity.getMainLooper());
-                                handler.post(new Runnable() {
-                                    @Override
-                                    public void run() {
+                            if (handler == null)return;
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (cameraDataTransport != null){
                                         cameraDataTransport.picture(bitmap,data);
                                     }
-                                });
-                            }
+                                }
+                            });
                         }
                     });
                 }
-            }).start();
+            });
         }
         //如果picLevel == 1，takingPicture置为true，在一帧预览数据到来时作为拍照数据
         else if (picLevel == 1){

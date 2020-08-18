@@ -313,8 +313,6 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
 
         //snakeBar对应的按钮
         tabView = new TabView(context);
-        params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        tabView.setLayoutParams(params);
         tabView.setTopDrawable(getDrawableFromSource(R.drawable.load_image3));
         tabView.setBottomDrawable(getDrawableFromSource(R.drawable.load_image2));
         tabView.setTopTitle("拍照");
@@ -377,9 +375,8 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         });
         componentScanCode.bottomButton = createComponentView(-1,-1,ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT,tabView);
 
+        //snakeBar对应的按钮
         tabView = new TabView(context);
-        params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        tabView.setLayoutParams(params);
         tabView.setTopDrawable(getDrawableFromSource(R.drawable.load_image3));
         tabView.setBottomDrawable(getDrawableFromSource(R.drawable.load_image2));
         tabView.setTopTitle("扫一扫abcde");
@@ -860,8 +857,6 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
 
         //snakeBar对应的按钮
         tabView = new TabView(context);
-        params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        tabView.setLayoutParams(params);
         componentDepot.targetTypeView = createComponentView(-1,-1,ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT,tabView);
 
         return componentDepot;

@@ -13,10 +13,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/yellow"
-        app:leftButtonPaddingLeft="10dp"
-        app:leftButtonPaddingRight="10dp"
-        app:rightButtonPaddingLeft="10dp"
-        app:rightButtonPaddingRight="10dp"
+        app:leftButtonPaddingLeft="5dp"
+        app:leftButtonPaddingRight="5dp"
+        app:rightButtonPaddingLeft="5dp"
+        app:rightButtonPaddingRight="5dp"
         app:gapHorizontal="10dp"
         app:midItemWidth="40dp"/>
 
