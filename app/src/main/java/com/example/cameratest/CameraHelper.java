@@ -125,13 +125,25 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
     /**
      * 停止预览
      */
-    public void stopPreview() {
+    private void stopPreview() {
         if (camera != null) {
             camera.setPreviewCallback(null);
             camera.stopPreview();
             camera.release();
             camera = null;
         }
+    }
+
+    /**
+     * 释放资源
+     */
+    public void release(){
+        startPreview();
+        activity = null;
+        cameraBuff = null;
+        sizeChangedListener = null;
+        previewCallback = null;
+        cameraDataTransport = null;
     }
 
     /**
@@ -456,6 +468,9 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
         this.sizeChangedListener = sizeChangedListener;
     }
 
+    public Camera.PreviewCallback getPreviewCallback() {
+        return previewCallback;
+    }
 
     public int getPreviewWidth() {
         return previewWidth;
@@ -517,6 +532,10 @@ public class CameraHelper implements Camera.PreviewCallback, SurfaceHolder.Callb
     public void setExpectPicSize(int expectWidth, int expectHeight){
         this.picWidth = expectWidth;
         this.picHeight = expectHeight;
+    }
+
+    public void setPreviewCallback(Camera.PreviewCallback previewCallback) {
+        this.previewCallback = previewCallback;
     }
 
     public void setCameraDataTransport(CameraDataTransport cameraDataTransport) {

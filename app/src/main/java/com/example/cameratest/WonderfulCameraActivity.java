@@ -5,25 +5,44 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.Matrix;
 import android.graphics.drawable.Drawable;
-import android.hardware.Camera;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
+import com.example.cameratest.google_zxing.BeepManager;
+import com.google.zxing.Result;
+import com.google.zxing.ResultMetadataType;
+import com.google.zxing.client.result.ParsedResult;
+import com.google.zxing.client.result.ResultParser;
+import java.text.DateFormat;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 
-public class WonderfulCameraActivity extends AppCompatActivity implements CameraDataTransport {
+/**
+ * wonderfulCamera 使用手册
+ */
+public class WonderfulCameraActivity extends AppCompatActivity implements CameraDataTransport,ScanResultListener{
 
     private static final String TAG = "WonderfulCameraActivity";
 
     private WonderfulCamera wonderfulCamera;
     private ProgressDialog progressDialog;
+
+    //蜂鸣器,暂时写在这里，以后封装到WonderfulCamera中
+    private BeepManager beepManager;
+
+
+    private static final Collection<ResultMetadataType> DISPLAYABLE_METADATA_TYPES =
+            EnumSet.of(ResultMetadataType.ISSUE_NUMBER,
+                    ResultMetadataType.SUGGESTED_PRICE,
+                    ResultMetadataType.ERROR_CORRECTION_LEVEL,
+                    ResultMetadataType.POSSIBLE_COUNTRY);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,10 +50,11 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
         setContentView(R.layout.activity_wonderful_camere);
         progressDialog = new ProgressDialog(this);
         progressDialog.setMessage("图片处理中...");
+        beepManager = new BeepManager(this);
 
         testA();
-//        testB();
-//        testC();
+        //testB();
+        //testC();
     }
 
     /**
@@ -44,6 +64,8 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
         wonderfulCamera = findViewById(R.id.cameraView);
         //设置回调监听以便获取拍照数据
         wonderfulCamera.setCameraDataTransport(this);
+        //设置扫码回调
+        wonderfulCamera.setScanResultListener(this);
 
 //        //设置前摄，默认后摄像
 //        wonderfulCamera.setCameraId(Camera.CameraInfo.CAMERA_FACING_FRONT);
@@ -183,7 +205,7 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
         //获取扫一扫元件仓库
         WonderfulCamera.ComponentDepot scan = componentDepotList.get(1);
         //获取导航按钮并修改为扫码，并替换图标
-        TabView tabView = (TabView) scan.targetTypeView;
+        TabView tabView = (TabView) scan.targetTypeView.view;
         tabView.setTopDrawable(getDrawableFromSource(R.drawable.bar_black_back));
         tabView.setBottomDrawable(getDrawableFromSource(R.drawable.bar_black_back));
         tabView.setTopTitle("扫码");
@@ -197,26 +219,26 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
         WonderfulCamera.ComponentDepot depot = wonderfulCamera.createComponentDepot();
         //添加自己的按钮属性
         //导航栏按钮
-        tabView = (TabView) depot.targetTypeView;
+        tabView = (TabView) depot.targetTypeView.view;
         tabView.setTopDrawable(getDrawableFromSource(R.drawable.load_image2));
         tabView.setBottomDrawable(getDrawableFromSource(R.drawable.load_image3));
         tabView.setTopTitle("识别");
         tabView.setBottomTitle("识别");
         tabView.init();
         //中心shape
-        tabView = (TabView) depot.centerShape;
+        tabView = (TabView) depot.centerShape.view;
         tabView.setTopDrawable(getDrawableFromSource(R.drawable.sel_nor));
         tabView.setBottomDrawable(getDrawableFromSource(R.drawable.sel_nor));
         tabView.init();
         //中心按钮
-        tabView = (TabView) depot.centerButton;
+        tabView = (TabView) depot.centerButton.view;
         tabView.setTopDrawable(getDrawableFromSource(R.drawable.load_image2));
         tabView.setBottomDrawable(getDrawableFromSource(R.drawable.load_image3));
         tabView.setTopTitle("打开手电");
         tabView.setBottomTitle("关闭手电");
         tabView.init();
         //底部按钮
-        tabView = (TabView) depot.bottomButton;
+        tabView = (TabView) depot.bottomButton.view;
         tabView.setTopDrawable(getDrawableFromSource(R.drawable.load_image2));
         tabView.setBottomDrawable(getDrawableFromSource(R.drawable.load_image3));
         tabView.setTopTitle("点击识别");
@@ -248,8 +270,7 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
         wonderfulCamera.setCameraDataTransport(this);
 
         //构建一个CoordinateView，用于设定自己的自定义view
-        final WonderfulCamera.CoordinateView coordinateView = wonderfulCamera.createCoordinateView();
-        ;
+        final ComponentView coordinateView = new ComponentView();
 
         //设置大小发生改变的监听，可获取控件的size，默认只要大小改变就会回调
         //一般情况下会回调两次，第二次才是准确的
@@ -310,7 +331,7 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
         });
 
         //强制获取一个自定义View集合
-        List<WonderfulCamera.CoordinateView> coordinateViews = wonderfulCamera.forceRequestCoordinateView();
+        List<ComponentView> coordinateViews = wonderfulCamera.forceRequestCoordinateView();
         //定义自己的按钮
         TabView tabView = new TabView(this);
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -351,26 +372,8 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
 
         //TODO 高级使用-数据加工厂
         //TODO 如果相机默认数据加工不能满足需求，则可以设置自己的数据加工厂
-        wonderfulCamera.setCameraDataFactory(new CameraDataFactory() {
-
-            //普通拍照
-            @Override
-            public Bitmap picture(Bitmap picBitmap,byte[] data) {
-                //我们做一个旋转测试
-                Bitmap bitmap;
-                bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
-                Matrix matrix = new Matrix();
-                matrix.postRotate(180);
-                bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, false);
-                return bitmap;
-            }
-
-            //水印功能
-            @Override
-            public Bitmap pictureWatermark(Bitmap bitmap, String mark) {
-                return null;
-            }
-        });
+        //TODO 90度旋转测试
+        wonderfulCamera.addCameraDataFactory(new RotationFactory());
 
         //初始化
         wonderfulCamera.init();
@@ -382,8 +385,18 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        beepManager.updatePrefs();
+        if (wonderfulCamera != null){
+            wonderfulCamera.scanReset();
+        }
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
+        beepManager.close();
         wonderfulCamera.releaseCamera();
     }
 
@@ -394,6 +407,39 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
         progressDialog.dismiss();
         PictureActivity.bitmap = bitmap;
         Intent intent = new Intent(this, PictureActivity.class);
+        startActivity(intent);
+    }
+
+    //扫码返回接口
+    @Override
+    public void onScanResult(Result result,byte[] scanBitmap) {
+
+        beepManager.playBeepSoundAndVibrate();
+
+        PictureActivity.bitmapArray = scanBitmap;
+        Intent intent = new Intent(this, PictureActivity.class);
+        ParsedResult parsedResult = ResultParser.parseResult(result);
+        DateFormat formatter = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
+        String date = formatter.format(result.getTimestamp());
+        Map<ResultMetadataType,Object> metadata = result.getResultMetadata();
+        StringBuilder metadataText = new StringBuilder(20);
+        if (metadata != null) {
+            for (Map.Entry<ResultMetadataType,Object> entry : metadata.entrySet()) {
+                if (DISPLAYABLE_METADATA_TYPES.contains(entry.getKey())) {
+                    metadataText.append(entry.getValue()).append('\n');
+                }
+            }
+            if (metadataText.length() > 0) {
+                metadataText.setLength(metadataText.length() - 1);
+            }
+        }
+        String contents = parsedResult.getDisplayResult();
+        contents =  contents.replace("\r", "");
+        intent.putExtra("format",result.getBarcodeFormat().toString());
+        intent.putExtra("type",parsedResult.getType().toString());
+        intent.putExtra("time",date);
+        intent.putExtra("metadata",metadataText.toString());
+        intent.putExtra("content",contents);
         startActivity(intent);
     }
 }

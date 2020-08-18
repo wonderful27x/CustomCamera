@@ -5,12 +5,17 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.Point;
 import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
 import android.util.AttributeSet;
+import android.util.Size;
+import android.view.Display;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,17 +25,20 @@ import java.util.List;
  *  @Date 2020-5-21
  *  @Version 1.0
  *  @Description 自定义相机
+ *  TODO 初始版本，性能有待提升,多线程，拦截器
  */
-public class WonderfulCamera extends RelativeLayout implements CameraDataTransport {
+public class WonderfulCamera extends RelativeLayout implements CameraDataTransport{
 
     //相机辅助类
     private CameraHelper cameraHelper;
     //相机预览surfaceView
     private SurfaceView surfaceView;
     //固定的相机元件仓库集合，每个item代表相机的一个功能，如拍照、扫码
+    //TODO 有缺陷，当使用自定义view的时候就不好修改，应该使用hashMap
     private List<ComponentDepot> componentDepots;
+    //TODO 有缺陷，当使用自定义view的时候就不好修改，应该使用hashMap
     //用户自定义的View，如果固定的相机元素不能满足需求用户可添加自己的View，这个view的位置由用户通过坐标指定
-    private List<CoordinateView> coordinateViews;
+    private List<ComponentView> coordinateViews;
     //相机选择导航按钮，用于切换相机功能，如拍照、扫码
     private CustomSnakeBar<View> snakeBar;
 
@@ -62,9 +70,9 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
     private String snakePosition = "bottom";
 
     //默认情况下的左边按钮
-    private CoordinateView leftDefault;
+    private ComponentView leftDefault;
     //默认情况下右边按钮
-    private CoordinateView rightDefault;
+    private ComponentView rightDefault;
 
     //控件大小回调标志，默认只要发生改变就回调
     //用户可手动截断
@@ -81,8 +89,8 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
     //导航按钮（snakeBar中间按钮）的间隔
     private int snakeHorizontalGap;
 
-    //拍照类型，如加水印或普通拍照
-    private PictureType pictureType;
+    //扫码管理类
+    private ScanManager scanManager;
 
     private Context context;
 
@@ -98,9 +106,11 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
     private CameraEventListener cameraEventListener;
 
     //相机数据处理模块-相机数据工厂，对数据进行加工处理，如水印
-    private CameraDataFactory cameraDataFactory;
+    private List<CameraDataFactory> cameraDataFactory;
     //相机数据运输接口，将加工后的数据运输到外界
     private CameraDataTransport cameraDataTransport;
+    //扫描结果返回接口
+    private ScanResultListener scanResultListener;
 
     public WonderfulCamera(Context context) {
         this(context,null);
@@ -163,36 +173,36 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
                 int centerX = width / 2;
                 int centerY = height / 2;
                 //centerShape
-                left = centerX - depot.centerShape.getMeasuredWidth() / 2;
-                top = centerY - depot.centerShape.getMeasuredHeight() / 2;
-                right = left + depot.centerShape.getMeasuredWidth();
-                bottom = top + depot.centerShape.getMeasuredHeight();
-                depot.centerShape.layout(left,top,right,bottom);
+                left = centerX - depot.centerShape.view.getMeasuredWidth() / 2;
+                top = centerY - depot.centerShape.view.getMeasuredHeight() / 2;
+                right = left + depot.centerShape.view.getMeasuredWidth();
+                bottom = top + depot.centerShape.view.getMeasuredHeight();
+                depot.centerShape.view.layout(left,top,right,bottom);
                 //centerButton
-                left = centerX - depot.centerButton.getMeasuredWidth() / 2;
-                top = centerY - depot.centerButton.getMeasuredHeight() / 2;
-                right = left + depot.centerButton.getMeasuredWidth();
-                bottom = top + depot.centerButton.getMeasuredHeight();
-                depot.centerButton.layout(left,top,right,bottom);
+                left = centerX - depot.centerButton.view.getMeasuredWidth() / 2;
+                top = centerY - depot.centerButton.view.getMeasuredHeight() / 2;
+                right = left + depot.centerButton.view.getMeasuredWidth();
+                bottom = top + depot.centerButton.view.getMeasuredHeight();
+                depot.centerButton.view.layout(left,top,right,bottom);
                 //bottomButton
                 if ("bottom".equals(snakePosition)){
-                    left = centerX - depot.bottomButton.getMeasuredWidth() / 2;
-                    top = height - depot.bottomButton.getMeasuredHeight() - snakeBar.getMeasuredHeight() - marginBottom;
-                    right = left + depot.bottomButton.getMeasuredWidth();
-                    bottom = top + depot.bottomButton.getMeasuredHeight();
+                    left = centerX - depot.bottomButton.view.getMeasuredWidth() / 2;
+                    top = height - depot.bottomButton.view.getMeasuredHeight() - snakeBar.getMeasuredHeight() - marginBottom;
+                    right = left + depot.bottomButton.view.getMeasuredWidth();
+                    bottom = top + depot.bottomButton.view.getMeasuredHeight();
                 }else if("top".equals(snakePosition)){
-                    left = centerX - depot.bottomButton.getMeasuredWidth() / 2;
-                    top = height - depot.bottomButton.getMeasuredHeight() - marginBottom;
-                    right = left + depot.bottomButton.getMeasuredWidth();
-                    bottom = top + depot.bottomButton.getMeasuredHeight();
+                    left = centerX - depot.bottomButton.view.getMeasuredWidth() / 2;
+                    top = height - depot.bottomButton.view.getMeasuredHeight() - marginBottom;
+                    right = left + depot.bottomButton.view.getMeasuredWidth();
+                    bottom = top + depot.bottomButton.view.getMeasuredHeight();
                 }
-                depot.bottomButton.layout(left,top,right,bottom);
+                depot.bottomButton.view.layout(left,top,right,bottom);
             }
         }
 
         //用户自定义控件
         if(coordinateViews != null){
-            for (CoordinateView view:coordinateViews){
+            for (ComponentView view:coordinateViews){
                 view.view.layout(view.x,view.y,view.x + view.view.getMeasuredWidth(),view.y + view.view.getMeasuredHeight());
             }
         }
@@ -233,13 +243,11 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
 
         snakeHorizontalGap = 50;
 
-        pictureType = new PictureType();
-        pictureType.type = PicType.PIC_DEFAULT;
-
-        cameraDataFactory = new DefaultCameraDataFactory();
-
         TabView tabView;
         RelativeLayout.LayoutParams params;
+
+        //数据加工厂
+        cameraDataFactory = new ArrayList<>();
 
         //固定控件
         componentDepots = new ArrayList<>();
@@ -252,7 +260,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         tabView.setTopDrawable(getDrawableFromSource(R.drawable.video_show_play));
         tabView.setBottomDrawable(getDrawableFromSource(R.drawable.video_show_play));
         tabView.init();
-        componentPic.centerShape = tabView;
+        componentPic.centerShape = createComponentView(-1,-1,ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT,tabView);
 
         //centerButton
         tabView = new TabView(context);
@@ -271,12 +279,12 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
                 TabView view = (TabView) v;
                 view.setChecked(!view.isChecked());
                 if(cameraEventListener != null){
-                    TabView targetView = (TabView) componentDepots.get(currentMode).targetTypeView;
+                    TabView targetView = (TabView) componentDepots.get(currentMode).targetTypeView.view;
                     cameraEventListener.centerOnClick(currentMode,view.getTopTitle(),targetView.getTopTitle());
                 }
             }
         });
-        componentPic.centerButton = tabView;
+        componentPic.centerButton = createComponentView(-1,-1,ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT,tabView);
 
         //bottomButton
         tabView = new TabView(context);
@@ -290,12 +298,12 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
             public void onClick(View v) {
                 TabView view = (TabView) v;
                 if(cameraEventListener != null){
-                    TabView targetView = (TabView) componentDepots.get(currentMode).targetTypeView;
+                    TabView targetView = (TabView) componentDepots.get(currentMode).targetTypeView.view;
                     cameraEventListener.bottomOnClick(currentMode,view.getTopTitle(),targetView.getTopTitle());
                 }
             }
         });
-        componentPic.bottomButton = tabView;
+        componentPic.bottomButton = createComponentView(-1,-1,ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT,tabView);
 
         //snakeBar对应的按钮
         tabView = new TabView(context);
@@ -309,18 +317,23 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         tabView.setBottomTitleColor(Color.parseColor("#aaaaaa"));
         tabView.setBackgroundColor(Color.GREEN);
         tabView.init();
-        componentPic.targetTypeView = tabView;
+        componentPic.targetTypeView = createComponentView(-1,-1,ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT,tabView);
 
         //扫码
         ComponentDepot componentScanCode = new ComponentDepot();
         //centerShape
-        tabView = new TabView(context);
-        params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        tabView.setLayoutParams(params);
-        tabView.setTopDrawable(getDrawableFromSource(R.drawable.xj_photo_up));
-        tabView.setBottomDrawable(getDrawableFromSource(R.drawable.xj_photo_up));
-        tabView.init();
-        componentScanCode.centerShape = tabView;
+//        tabView = new TabView(context);
+//        params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+//        tabView.setLayoutParams(params);
+//        tabView.setTopDrawable(getDrawableFromSource(R.drawable.xj_photo_up));
+//        tabView.setBottomDrawable(getDrawableFromSource(R.drawable.xj_photo_up));
+//        tabView.init();
+
+        ImageView imageView = new ImageView(context);
+        params = new RelativeLayout.LayoutParams(500, 500);
+        imageView.setLayoutParams(params);
+        imageView.setBackground(getDrawableFromSource(R.drawable.xj_photo_up));
+        componentScanCode.centerShape = createComponentView(-1,-1,500,500,imageView);
 
         //centerButton
         tabView = new TabView(context);
@@ -339,12 +352,12 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
                 TabView view = (TabView) v;
                 view.setChecked(!view.isChecked());
                 if(cameraEventListener != null){
-                    TabView targetView = (TabView) componentDepots.get(currentMode).targetTypeView;
+                    TabView targetView = (TabView) componentDepots.get(currentMode).targetTypeView.view;
                     cameraEventListener.centerOnClick(currentMode,view.getTopTitle(),targetView.getTopTitle());
                 }
             }
         });
-        componentScanCode.centerButton = tabView;
+        componentScanCode.centerButton = createComponentView(-1,-1,ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT,tabView);
 
         //bottomButton
         tabView = new TabView(context);
@@ -358,12 +371,12 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
             public void onClick(View v) {
                 TabView view = (TabView) v;
                 if(cameraEventListener != null){
-                    TabView targetView = (TabView) componentDepots.get(currentMode).targetTypeView;
+                    TabView targetView = (TabView) componentDepots.get(currentMode).targetTypeView.view;
                     cameraEventListener.bottomOnClick(currentMode,view.getTopTitle(),targetView.getTopTitle());
                 }
             }
         });
-        componentScanCode.bottomButton = tabView;
+        componentScanCode.bottomButton = createComponentView(-1,-1,ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT,tabView);
 
         tabView = new TabView(context);
         params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -376,7 +389,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         tabView.setBottomTitleColor(Color.parseColor("#aaaaaa"));
         tabView.setBackgroundColor(Color.GREEN);
         tabView.init();
-        componentScanCode.targetTypeView = tabView;
+        componentScanCode.targetTypeView = createComponentView(-1,-1,ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT,tabView);
 
         componentDepots.add(componentPic);
         componentDepots.add(componentScanCode);
@@ -384,7 +397,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         //用户自定义控件
         coordinateViews = new ArrayList<>();
         //返回按钮
-        leftDefault = new CoordinateView();
+
         tabView = new TabView(context);
         params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         tabView.setLayoutParams(params);
@@ -393,10 +406,9 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         tabView.setBottomDrawable(getDrawableFromSource(R.drawable.bar_black_back));
         tabView.setClickable(true);
         tabView.init();
-        leftDefault.view = tabView;
+        leftDefault = createComponentView(-1,-1,ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT,tabView);
 
         //相册按钮
-        rightDefault = new CoordinateView();
         tabView = new TabView(context);
         params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         tabView.setLayoutParams(params);
@@ -405,7 +417,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         tabView.setBottomDrawable(getDrawableFromSource(R.drawable.album));
         tabView.setClickable(true);
         tabView.init();
-        rightDefault.view = tabView;
+        rightDefault = createComponentView(-1,-1,ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT,tabView);
 
         coordinateViews.add(leftDefault);
         coordinateViews.add(rightDefault);
@@ -415,7 +427,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         this.componentDepots = componentDepots;
     }
 
-    public void setCoordinateViews(List<CoordinateView> coordinateViews) {
+    public void setCoordinateViews(List<ComponentView> coordinateViews) {
         this.coordinateViews = coordinateViews;
     }
 
@@ -483,7 +495,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         List<View> views = new ArrayList<>();
         if (componentDepots != null){
             for (ComponentDepot depot:componentDepots){
-                views.add(depot.targetTypeView);
+                views.add(depot.targetTypeView.view);
             }
         }
         snakeBar.addChildren(views);
@@ -571,6 +583,21 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
             cameraHelper.setFocusMode(focusMode);
         }
         cameraHelper.rePreview();
+        //二维码扫描初始化
+        initScan();
+    }
+
+    //TODO 二维码扫描初始化
+    private void initScan(){
+        if (currentMode == CameraMode.SCAN){
+            //TODO 有bug，后期使用map
+            Point scan = getComponentSize(componentDepots.get(1).centerShape);
+            Point preview = new Point(cameraHelper.getPreviewWidth(),cameraHelper.getPreviewHeight());
+            Point screen = getScreenSize();
+            scanManager = new ScanManager(scan,preview,screen);
+            scanManager.setScanResultListener(scanResultListener);
+            cameraHelper.setPreviewCallback(scanManager);
+        }
     }
 
     //添加到窗口中
@@ -584,14 +611,14 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         //添加固定元素
         if (componentDepots != null){
             for (ComponentDepot depot:componentDepots){
-                this.addView(depot.centerShape);
-                this.addView(depot.centerButton);
-                this.addView(depot.bottomButton);
+                this.addView(depot.centerShape.view);
+                this.addView(depot.centerButton.view);
+                this.addView(depot.bottomButton.view);
             }
         }
         //添加用户自定view
         if (coordinateViews != null){
-            for (CoordinateView view:coordinateViews){
+            for (ComponentView view:coordinateViews){
                 this.addView(view.view);
             }
         }
@@ -679,15 +706,15 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
             for (int i=0; i<componentDepots.size(); i++){
                 //先隐藏非选中控件
                 if (currentMode != i){
-                    componentDepots.get(i).centerShape.setVisibility(INVISIBLE);
-                    componentDepots.get(i).centerButton.setVisibility(INVISIBLE);
-                    componentDepots.get(i).bottomButton.setVisibility(INVISIBLE);
+                    componentDepots.get(i).centerShape.view.setVisibility(INVISIBLE);
+                    componentDepots.get(i).centerButton.view.setVisibility(INVISIBLE);
+                    componentDepots.get(i).bottomButton.view.setVisibility(INVISIBLE);
                 }
                 //显示选中控件
                 else {
-                    componentDepots.get(i).centerShape.setVisibility(VISIBLE);
-                    componentDepots.get(i).centerButton.setVisibility(VISIBLE);
-                    componentDepots.get(i).bottomButton.setVisibility(VISIBLE);
+                    componentDepots.get(i).centerShape.view.setVisibility(VISIBLE);
+                    componentDepots.get(i).centerButton.view.setVisibility(VISIBLE);
+                    componentDepots.get(i).bottomButton.view.setVisibility(VISIBLE);
                 }
             }
         }
@@ -706,7 +733,12 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
     }
 
     public void releaseCamera(){
-        cameraHelper.stopPreview();
+        if (cameraHelper != null){
+            cameraHelper.release();
+        }
+        if (scanManager != null){
+            scanManager.release();
+        }
     }
 
     /**
@@ -735,17 +767,8 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
      * 如果通过修改增加默认属性仍然无法满足需求，调用此方法强制返回一个自定义View集合
      * @return
      */
-    public List<CoordinateView> forceRequestCoordinateView(){
+    public List<ComponentView> forceRequestCoordinateView(){
         return coordinateViews;
-    }
-
-    /**
-     * 带坐标的View，坐标用于指定View的摆放位置
-     */
-    public static class CoordinateView{
-        public int x;
-        public int y;
-        public View view;
     }
 
     /**
@@ -754,14 +777,14 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
      * 他是和相机选择导航按钮snakeBar相关联的
      */
     public static class ComponentDepot{
-        public View centerShape;     //相机中间的一个形状，如扫码框
-        public View centerButton;    //相机中间的一个Button,覆盖在centerShape的上层
-        public View bottomButton;    //相机底部按钮，如拍照的按钮
-        public View targetTypeView;  //与snakeBar对应的按钮
+        public ComponentView centerShape;     //相机中间的一个形状，如扫码框
+        public ComponentView centerButton;    //相机中间的一个Button,覆盖在centerShape的上层
+        public ComponentView bottomButton;    //相机底部按钮，如拍照的按钮
+        public ComponentView targetTypeView;  //与snakeBar对应的按钮
     }
 
     /**
-     * 构建一个元件仓库给外界使用，自己new容易出现空指针
+     * 构建一个元件仓库方便外界使用，自己new容易出现空指针
      * @return
      */
     public ComponentDepot createComponentDepot(){
@@ -772,7 +795,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         tabView = new TabView(context);
         params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         tabView.setLayoutParams(params);
-        componentDepot.centerShape = tabView;
+        componentDepot.centerShape = createComponentView(-1,-1,ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT,tabView);
 
         //centerButton
         tabView = new TabView(context);
@@ -785,12 +808,12 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
                 view.setChecked(!view.isChecked());
                 view.setChecked(!view.isChecked());
                 if(cameraEventListener != null){
-                    TabView targetView = (TabView) componentDepots.get(currentMode).targetTypeView;
+                    TabView targetView = (TabView) componentDepots.get(currentMode).targetTypeView.view;
                     cameraEventListener.centerOnClick(currentMode,view.getTopTitle(),targetView.getTopTitle());
                 }
             }
         });
-        componentDepot.centerButton = tabView;
+        componentDepot.centerButton = createComponentView(-1,-1,ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT,tabView);
 
         //bottomButton
         tabView = new TabView(context);
@@ -801,18 +824,18 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
             public void onClick(View v) {
                 TabView view = (TabView) v;
                 if(cameraEventListener != null){
-                    TabView targetView = (TabView) componentDepots.get(currentMode).targetTypeView;
+                    TabView targetView = (TabView) componentDepots.get(currentMode).targetTypeView.view;
                     cameraEventListener.bottomOnClick(currentMode,view.getTopTitle(),targetView.getTopTitle());
                 }
             }
         });
-        componentDepot.bottomButton = tabView;
+        componentDepot.bottomButton = createComponentView(-1,-1,ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT,tabView);
 
         //snakeBar对应的按钮
         tabView = new TabView(context);
         params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         tabView.setLayoutParams(params);
-        componentDepot.targetTypeView = tabView;
+        componentDepot.targetTypeView = createComponentView(-1,-1,ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT,tabView);
 
         return componentDepot;
     }
@@ -828,17 +851,42 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         cameraHelper.switchCamera();
     }
 
-    public void setCameraDataFactory(CameraDataFactory cameraDataFactory) {
-        this.cameraDataFactory = cameraDataFactory;
+    /**
+     * 获取元件的宽高
+     * @param componentView
+     * @return
+     */
+    private Point getComponentSize(ComponentView componentView){
+        return new Point(componentView.width,componentView.height);
+    }
+
+    private Point getScreenSize(){
+        WindowManager manager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        Display display = manager.getDefaultDisplay();
+        Point point = new Point();
+        display.getSize(point);
+        return point;
+    }
+
+    public void addCameraDataFactory(CameraDataFactory cameraDataFactory) {
+        this.cameraDataFactory.add(cameraDataFactory);
     }
 
     public void setCameraDataTransport(CameraDataTransport cameraDataTransport) {
         this.cameraDataTransport = cameraDataTransport;
     }
 
-    //构建CoordinateView
-    public CoordinateView createCoordinateView(){
-        return new CoordinateView();
+
+
+    //构建ComponentView
+    public ComponentView createComponentView(int x,int y,int width,int height,View view){
+        ComponentView componentView = new ComponentView();
+        componentView.x = x;
+        componentView.y = y;
+        componentView.width = width;
+        componentView.height = height;
+        componentView.view = view;
+        return componentView;
     }
 
     public void setSizeChangedListener(SizeChangedListener sizeChangedListener) {
@@ -851,6 +899,10 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
 
     public void setCameraEventListener(CameraEventListener cameraEventListener) {
         this.cameraEventListener = cameraEventListener;
+    }
+
+    public void setScanResultListener(ScanResultListener scanResultListener) {
+        this.scanResultListener = scanResultListener;
     }
 
     //控件大小发生改变的监听
@@ -874,31 +926,13 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         public void bottomOnClick(int currentMode,String buttonName,String message);
     }
 
-    //拍照类型封装类
-    private static class PictureType{
-        //拍照类型，如加水印
-        private @PicType int type;
-        //与类型对应的一个信息存储对象，如水印内容
-        private Object object;
-    }
-
     //拍照数据运输接口，当拍照成功后会将拍照数据运输到这里
     //然后调用相机数据工厂进行加工，最后再将加工后的数据继续运输到外界
     @Override
     public void picture(Bitmap bitmap, byte[] data) {
-        Bitmap picBitmap = null;
-        switch (pictureType.type){
-            //普通拍照
-            case PicType.PIC_DEFAULT:
-                picBitmap = cameraDataFactory.picture(bitmap,data);
-                break;
-            //水印功能
-            case PicType.PIC_WATER_MARK:
-                picBitmap = cameraDataFactory.picture(bitmap,data);
-                picBitmap = cameraDataFactory.pictureWatermark(picBitmap,(String)pictureType.object);
-                break;
-            default:
-                break;
+        Bitmap picBitmap = bitmap;
+        for (CameraDataFactory factory:cameraDataFactory){
+            picBitmap = factory.working(picBitmap,data);
         }
         if (cameraDataTransport != null){
             cameraDataTransport.picture(picBitmap,data);
@@ -906,23 +940,18 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
     }
 
     /**
-     * 相机普通拍照功能，拍照后只会得到原始图片bitmap
+     * 拍照
      */
     public void takePicture(){
-        pictureType.type = PicType.PIC_DEFAULT;
         if (cameraHelper != null){
             cameraHelper.takePicture();
         }
     }
 
-    /**
-     * 水印拍照功能
-     */
-    public void takePictureWatermark(String content){
-        pictureType.type = PicType.PIC_WATER_MARK;
-        pictureType.object = content;
-        if (cameraHelper != null){
-            cameraHelper.takePicture();
+    //重置扫码，让其继续工作，因为扫码成功后就暂停了
+    public void scanReset(){
+        if (scanManager != null){
+            scanManager.reset();
         }
     }
 
