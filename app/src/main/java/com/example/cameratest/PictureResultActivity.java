@@ -8,6 +8,8 @@ import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.example.cameratest.core.ScanResult;
+
 /**
  * 拍照/扫码结果显示Activity
  */
@@ -35,17 +37,15 @@ public class PictureResultActivity extends AppCompatActivity {
         content = findViewById(R.id.content);
 
         Intent intent = getIntent();
-        String formatStr = intent.getStringExtra("format");
-        String typeStr = intent.getStringExtra("type");
-        String timeStr = intent.getStringExtra("time");
-        String metadataStr = intent.getStringExtra("metadata");
-        String contentStr = intent.getStringExtra("content");
+        ScanResult scanResult = (ScanResult) intent.getSerializableExtra("scanResult");
 
-        format.setText(formatStr);
-        type.setText(typeStr);
-        time.setText(timeStr);
-        metadata.setText(metadataStr);
-        content.setText(contentStr);
+        if (scanResult != null){
+            format.setText("格式： " + scanResult.format);
+            type.setText("类型： " + scanResult.type);
+            time.setText("时间： " + scanResult.dateTime);
+            metadata.setText("元数据： " + scanResult.metadata);
+            content.setText(scanResult.content);
+        }
 
         if (bitmapArray != null){
             bitmap = byteToBitmap(bitmapArray);

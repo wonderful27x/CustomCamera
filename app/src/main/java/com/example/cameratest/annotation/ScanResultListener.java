@@ -1,6 +1,6 @@
 package com.example.cameratest.annotation;
 
-import com.google.zxing.Result;
+import com.example.cameratest.core.ScanResult;
 
 /**
  *  @Author wonderful
@@ -9,5 +9,5 @@ import com.google.zxing.Result;
  *  @Description 二维码/条形码扫描结果返回接口
  */
 public interface ScanResultListener {
-    public void onScanResult(Result result,byte[] scanBitmap);
+    public void onScanResult(ScanResult scanResult, byte[] scanBitmap);
 }

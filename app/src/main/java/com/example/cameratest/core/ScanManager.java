@@ -14,8 +14,15 @@ import com.google.zxing.MultiFormatReader;
 import com.google.zxing.PlanarYUVLuminanceSource;
 import com.google.zxing.ReaderException;
 import com.google.zxing.Result;
+import com.google.zxing.ResultMetadataType;
+import com.google.zxing.client.result.ParsedResult;
+import com.google.zxing.client.result.ResultParser;
 import com.google.zxing.common.HybridBinarizer;
 import java.io.ByteArrayOutputStream;
+import java.text.DateFormat;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -49,6 +56,12 @@ public class ScanManager implements Camera.PreviewCallback {
     private ExecutorService executorService;
     //Handler
     private Handler handler;
+
+    private static final Collection<ResultMetadataType> DISPLAYABLE_METADATA_TYPES =
+            EnumSet.of(ResultMetadataType.ISSUE_NUMBER,
+                    ResultMetadataType.SUGGESTED_PRICE,
+                    ResultMetadataType.ERROR_CORRECTION_LEVEL,
+                    ResultMetadataType.POSSIBLE_COUNTRY);
 
     public ScanManager(Point scanSize, Point previewSize, Point screenSize) {
         this.scanSize = scanSize;
@@ -113,13 +126,13 @@ public class ScanManager implements Camera.PreviewCallback {
             Log.d(TAG, "Found barcode in " + TimeUnit.NANOSECONDS.toMillis(end - start) + " ms");
             final byte[] scanData = sourceToByteArray(source);
             if (scanResultListener != null){
-                final Result finalRawResult = rawResult;
+                final ScanResult scanResult = parseResult(rawResult);
                 if (handler == null)return;
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
                         if (scanResultListener != null){
-                            scanResultListener.onScanResult(finalRawResult,scanData);
+                            scanResultListener.onScanResult(scanResult,scanData);
                         }
                     }
                 });
@@ -127,6 +140,45 @@ public class ScanManager implements Camera.PreviewCallback {
         }else {
             reset();
         }
+    }
+
+
+    /**
+     * 解析扫描结果
+     * @param result google zxing 解码的原始结果
+     * @return 返回自己封装的结果
+     */
+    private ScanResult parseResult(Result result){
+        ScanResult scanResult = new ScanResult();
+        //调用google zxing方法解析
+        ParsedResult parsedResult = ResultParser.parseResult(result);
+        //获取时间
+        DateFormat formatter = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
+        String date = formatter.format(result.getTimestamp());
+        //获取元数据
+        Map<ResultMetadataType,Object> metadata = result.getResultMetadata();
+        StringBuilder metadataText = new StringBuilder(20);
+        if (metadata != null) {
+            for (Map.Entry<ResultMetadataType,Object> entry : metadata.entrySet()) {
+                if (DISPLAYABLE_METADATA_TYPES.contains(entry.getKey())) {
+                    metadataText.append(entry.getValue()).append('\n');
+                }
+            }
+            if (metadataText.length() > 0) {
+                metadataText.setLength(metadataText.length() - 1);
+            }
+        }
+        //获取主要扫描内容
+        String contents = parsedResult.getDisplayResult();
+        contents =  contents.replace("\r", "");
+
+        scanResult.format = result.getBarcodeFormat().toString();//格式
+        scanResult.type = parsedResult.getType().toString();     //类型
+        scanResult.dateTime = date;                              //时间
+        scanResult.metadata = metadataText.toString();           //元数据
+        scanResult.content = contents;                           //主要扫描内容
+
+        return scanResult;
     }
 
     /**

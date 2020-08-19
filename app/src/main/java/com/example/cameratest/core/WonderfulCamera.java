@@ -33,8 +33,9 @@ import java.util.Map;
  *  @Author wonderful
  *  @Date 2020-5-21
  *  @Version 1.0
- *  @Description 自定义相机
+ *  @Description 自定义相机，集成了拍照扫描功能
  *  TODO 初始版本，性能有待提升,多线程，拦截器,UI和业务逻辑应该解藕
+ *  TODO 待完善相册选择和静态图片扫码
  */
 public class WonderfulCamera extends RelativeLayout implements CameraDataTransport {
 
@@ -89,7 +90,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
 
     //拍照模式,默认为0
     //0：高质量-使用takePicture api
-    //1：低质量-使用预览数据，这种模式下
+    //1：低质量-使用预览原始yuv数据，这种模式下的图片质量较差，但是速度超快
     private int picLevel;
 
     //导航按钮（snakeBar中间按钮）的间隔
@@ -257,7 +258,8 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
 
         //固定控件
         componentDepots = new LinkedHashMap<>();
-        //拍照
+
+        //拍照 =========================================================================================
         ComponentDepot componentPic = new ComponentDepot();
         //centerShape
         tabView = new TabView(context);
@@ -323,7 +325,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         tabView.init();
         componentPic.targetTypeView = createComponentView(-1,-1,ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT,tabView);
 
-        //扫码
+        //扫码 ======================================================================================
         ComponentDepot componentScanCode = new ComponentDepot();
         //centerShape
         ImageView imageView = new ImageView(context);
@@ -606,7 +608,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
         initScan();
     }
 
-    //TODO 二维码扫描初始化
+    //二维码扫描初始化
     private void initScan(){
         if (currentMode == CameraMode.SCAN){
             Point scan = getComponentSize(componentDepots.get(CameraMode.SCAN.getMode()).centerShape);
@@ -940,11 +942,11 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
 
     //相机事件监听，注意这里包括三个事件，1：相机模式选择，2：当前模式下的中间按钮点击事件，3：当前模式下底部按钮点击事件
     public interface CameraEventListener{
-        //1 -> view:选中的View，position：选中的位置，代表了相机的模式，message：选中模式的字符串描述，和按钮的名字一致
+        //1 -> view:选中的View，currentMode：选中的相机模式，message：模式选择按钮的字符串描述-名字
         public void onModeSelect(View view, CameraMode currentMode,String message);
-        //2 -> position：当前选中的位置，代表了相机的模式，buttonName:当前按钮名字，message：选中模式的字符串描述
+        //2 -> currentMode：选中的相机模式，buttonName:当前按钮名字，message：选中模式的字符串描述，和模式选择按钮的名字一致
         public void centerOnClick(CameraMode currentMode,String buttonName,String message);
-        //3 -> position：当前选中的位置，代表了相机的模式，buttonName:当前按钮名字，message：选中模式的字符串描述
+        //3 -> currentMode：选中的相机模式，buttonName:当前按钮名字，message：选中模式的字符串描述，和模式选择按钮的名字一致
         public void bottomOnClick(CameraMode currentMode,String buttonName,String message);
     }
 
@@ -953,6 +955,7 @@ public class WonderfulCamera extends RelativeLayout implements CameraDataTranspo
     @Override
     public void picture(Bitmap bitmap, byte[] data) {
         Bitmap picBitmap = bitmap;
+        //数据加工，TODO 应该使用线程
         for (CameraDataFactory factory:cameraDataFactory){
             picBitmap = factory.working(picBitmap,data);
         }

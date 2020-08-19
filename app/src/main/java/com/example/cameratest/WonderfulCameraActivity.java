@@ -18,6 +18,7 @@ import com.example.cameratest.annotation.CameraMode;
 import com.example.cameratest.annotation.CoordinateKey;
 import com.example.cameratest.annotation.ScanResultListener;
 import com.example.cameratest.core.ComponentView;
+import com.example.cameratest.core.ScanResult;
 import com.example.cameratest.core.TabView;
 import com.example.cameratest.core.WonderfulCamera;
 import com.example.cameratest.factory.RotationFactory;
@@ -33,6 +34,7 @@ import java.util.Map;
 
 /**
  * wonderfulCamera 使用手册
+ * TODO 扫描后的图片旋转角有问题
  */
 public class WonderfulCameraActivity extends AppCompatActivity implements CameraDataTransport, ScanResultListener {
 
@@ -43,13 +45,6 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
 
     //蜂鸣器,暂时写在这里，以后封装到WonderfulCamera中
     private BeepManager beepManager;
-
-
-    private static final Collection<ResultMetadataType> DISPLAYABLE_METADATA_TYPES =
-            EnumSet.of(ResultMetadataType.ISSUE_NUMBER,
-                    ResultMetadataType.SUGGESTED_PRICE,
-                    ResultMetadataType.ERROR_CORRECTION_LEVEL,
-                    ResultMetadataType.POSSIBLE_COUNTRY);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -113,7 +108,7 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
             }
         });
 
-        ////相机事件监听，注意这里包括三个事件，1：相机模式选择，2：当前模式下的中间按钮点击事件，3：当前模式下底部按钮点击事件
+        //相机事件监听，注意这里包括三个事件，1：相机模式选择，2：当前模式下的中间按钮点击事件，3：当前模式下底部按钮点击事件
         wonderfulCamera.setCameraEventListener(new WonderfulCamera.CameraEventListener() {
             @Override
             public void onModeSelect(View view, CameraMode currentMode, String message) {
@@ -447,34 +442,14 @@ public class WonderfulCameraActivity extends AppCompatActivity implements Camera
 
     //扫码返回接口
     @Override
-    public void onScanResult(Result result,byte[] scanBitmap) {
+    public void onScanResult(ScanResult result, byte[] scanBitmap) {
 
         beepManager.playBeepSoundAndVibrate();
 
         PictureResultActivity.bitmapArray = scanBitmap;
+
         Intent intent = new Intent(this, PictureResultActivity.class);
-        ParsedResult parsedResult = ResultParser.parseResult(result);
-        DateFormat formatter = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
-        String date = formatter.format(result.getTimestamp());
-        Map<ResultMetadataType,Object> metadata = result.getResultMetadata();
-        StringBuilder metadataText = new StringBuilder(20);
-        if (metadata != null) {
-            for (Map.Entry<ResultMetadataType,Object> entry : metadata.entrySet()) {
-                if (DISPLAYABLE_METADATA_TYPES.contains(entry.getKey())) {
-                    metadataText.append(entry.getValue()).append('\n');
-                }
-            }
-            if (metadataText.length() > 0) {
-                metadataText.setLength(metadataText.length() - 1);
-            }
-        }
-        String contents = parsedResult.getDisplayResult();
-        contents =  contents.replace("\r", "");
-        intent.putExtra("format",result.getBarcodeFormat().toString());
-        intent.putExtra("type",parsedResult.getType().toString());
-        intent.putExtra("time",date);
-        intent.putExtra("metadata",metadataText.toString());
-        intent.putExtra("content",contents);
+        intent.putExtra("scanResult",result);
         startActivity(intent);
     }
 }
