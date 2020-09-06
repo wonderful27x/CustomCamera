@@ -1,0 +1,2 @@
+# CustomSnakeBar
+通过大量的自定义view实现了完全自定义相机，并集成googleZXing实现了扫码功能
