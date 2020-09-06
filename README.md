@@ -1,3 +1,3 @@
-# CustomSnakeBar
+# CustomCamera
 通过大量的自定义view实现了完全的自定义相机
 强烈推荐better分支，better分支是一个更好的分支，他优化了架构，并集成googleZXing实现了扫描功能
